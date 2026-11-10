@@ -24,21 +24,23 @@ export const RUTAS_ADMIN: Routes = [
     title: 'Parqueadero · SENA SMART PARK',
     loadComponent: () => import('./parqueadero/parqueadero').then((m) => m.Parqueadero),
   },
-  pendiente('aprendices', {
-    titulo: 'Aprendices',
-    descripcion: 'Registro y consulta de aprendices y de su autorización para ingresar.',
-    icono: 'school',
+  pendiente('usuarios', {
+    titulo: 'Usuarios',
+    descripcion: 'Aprendices, instructores y administrativos que pueden usar el parqueadero.',
+    icono: 'groups',
     incremento: '4.2',
     funciones: [
-      'Registrar, consultar y editar aprendices',
+      'Registrar, consultar y editar usuarios',
+      'Clasificar a cada usuario: aprendiz, instructor o administrativo (personal de oficina)',
+      'Datos según la categoría: programa, ficha y jornada (aprendiz), área (instructor), dependencia y cargo (administrativo)',
+      'Filtrar por categoría y buscar por nombre o documento',
       'Activar y desactivar la autorización de ingreso',
-      'Consultar la información académica: programa, ficha y jornada',
-      'Ver los vehículos y el historial de cada aprendiz',
+      'Ver los vehículos y el historial de cada usuario',
     ],
   }),
   pendiente('vehiculos', {
     titulo: 'Vehículos',
-    descripcion: 'Vehículos registrados por los aprendices y su estado de aprobación.',
+    descripcion: 'Vehículos registrados por los usuarios y su estado de aprobación.',
     icono: 'directions_car',
     incremento: '4.2',
     funciones: [
@@ -57,7 +59,7 @@ export const RUTAS_ADMIN: Routes = [
       'Historial de entradas y salidas con fecha y hora',
       'Accesos rechazados con su motivo',
       'Aperturas manuales con responsable y motivo',
-      'Filtros por fecha, placa, aprendiz y resultado',
+      'Filtros por fecha, placa, usuario, categoría y resultado',
       'Apertura remota de la barrera (registrada)',
     ],
   }),
@@ -100,14 +102,14 @@ export const RUTAS_ADMIN: Routes = [
   }),
   pendiente('configuracion', {
     titulo: 'Configuración',
-    descripcion: 'Parámetros del parqueadero y administración de usuarios.',
+    descripcion: 'Parámetros del parqueadero y cuentas de administrador.',
     icono: 'settings',
     incremento: '4.5',
     funciones: [
       'Capacidad y espacios del parqueadero',
       'Horarios de funcionamiento',
       'Reglas de acceso y vigencia del QR',
-      'Usuarios administradores, roles y permisos',
+      'Cuentas de administrador del parqueadero',
     ],
   }),
 ];

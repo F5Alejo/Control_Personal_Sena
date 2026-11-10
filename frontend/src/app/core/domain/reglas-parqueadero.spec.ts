@@ -44,18 +44,14 @@ describe('detectarInconsistencia', () => {
     expect(detectarInconsistencia(espacio('P01', 'LIBRE', false))).toBeNull();
     expect(detectarInconsistencia(espacio('P01', 'OCUPADO', true))).toBeNull();
   });
-
-  it('un espacio reservado nunca es inconsistente (el vehículo va en camino)', () => {
-    expect(detectarInconsistencia(espacio('P01', 'RESERVADO', true))).toBeNull();
-    expect(detectarInconsistencia(espacio('P01', 'RESERVADO', false))).toBeNull();
-  });
 });
 
 describe('asignación de espacios (D-02, RN-11)', () => {
   it('solo está disponible un espacio libre cuyo sensor lo confirma', () => {
     expect(estaDisponible(espacio('P01', 'LIBRE', false))).toBe(true);
     expect(estaDisponible(espacio('P01', 'LIBRE', true))).toBe(false);
-    expect(estaDisponible(espacio('P01', 'RESERVADO', false))).toBe(false);
+    expect(estaDisponible(espacio('P01', 'OCUPADO', false))).toBe(false);
+    expect(estaDisponible(espacio('P01', 'FUERA_DE_SERVICIO', false))).toBe(false);
   });
 
   it('elige el primer espacio disponible y compatible, en orden de código', () => {
@@ -80,7 +76,7 @@ describe('calcularResumen', () => {
     const espacios = [
       espacio('P01', 'OCUPADO', true),
       espacio('P02', 'LIBRE', false),
-      espacio('P03', 'RESERVADO', false),
+      espacio('P03', 'FUERA_DE_SERVICIO', false),
       espacio('P04', 'LIBRE', true, 'MOTO'),
     ];
     const movimientos: Movimiento[] = [
@@ -95,8 +91,7 @@ describe('calcularResumen', () => {
       capacidad: 4,
       disponibles: 1,
       ocupados: 1,
-      reservados: 1,
-      fueraDeServicio: 0,
+      fueraDeServicio: 1,
       vehiculosDetectados: 2,
       inconsistencias: 1,
       ingresosHoy: 2,

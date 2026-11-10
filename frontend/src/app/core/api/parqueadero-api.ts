@@ -41,12 +41,12 @@ export abstract class ParqueaderoApi {
   /** GET /api/estadisticas/ocupacion-por-hora?dias=7 */
   abstract ocupacionPorHora(): Observable<OcupacionPorHora[]>;
 
-  /** GET /api/aprendices/{id}/vehiculos */
-  abstract vehiculosDe(aprendizId: number): Observable<Vehiculo[]>;
+  /** GET /api/personas/{id}/vehiculos */
+  abstract vehiculosDe(personaId: number): Observable<Vehiculo[]>;
 
-  /** GET /api/aprendices/{id}/acceso-activo — null si no tiene vehículos dentro. */
-  abstract accesoActivo(aprendizId: number): Observable<AccesoActivo | null>;
+  /** GET /api/personas/{id}/acceso-activo — null si no tiene vehículos dentro. */
+  abstract accesoActivo(personaId: number): Observable<AccesoActivo | null>;
 
-  /** GET /api/aprendices/{id}/notificaciones */
-  abstract notificaciones(aprendizId: number): Observable<Notificacion[]>;
+  /** GET /api/personas/{id}/notificaciones */
+  abstract notificaciones(personaId: number): Observable<Notificacion[]>;
 }

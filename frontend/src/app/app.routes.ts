@@ -14,16 +14,17 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
-    canMatch: [requiereRol('ADMIN')],
+    canMatch: [requiereRol('ADMINISTRADOR')],
     loadComponent: () => import('./layout/admin-layout/admin-layout').then((m) => m.AdminLayout),
     loadChildren: () => import('./features/admin/admin.routes').then((m) => m.RUTAS_ADMIN),
   },
   {
     path: 'app',
-    canMatch: [requiereRol('APRENDIZ')],
+    // App "Mi parqueadero": aprendices, instructores y administrativos.
+    canMatch: [requiereRol('USUARIO')],
     loadComponent: () =>
-      import('./layout/aprendiz-layout/aprendiz-layout').then((m) => m.AprendizLayout),
-    loadChildren: () => import('./features/aprendiz/aprendiz.routes').then((m) => m.RUTAS_APRENDIZ),
+      import('./layout/usuario-layout/usuario-layout').then((m) => m.UsuarioLayout),
+    loadChildren: () => import('./features/usuario/usuario.routes').then((m) => m.RUTAS_USUARIO),
   },
   { path: '**', redirectTo: '' },
 ];

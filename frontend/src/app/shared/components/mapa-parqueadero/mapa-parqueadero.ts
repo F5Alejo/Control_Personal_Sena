@@ -6,7 +6,7 @@ import { detectarInconsistencia } from '../../../core/domain/reglas-parqueadero'
 import { Espacio } from '../../../core/models';
 import { RelojService } from '../../../core/util/reloj.service';
 import { DuracionPipe } from '../../pipes/formatos.pipes';
-import { ESTADO_ESPACIO, INCONSISTENCIA, VEHICULO } from '../../presentacion';
+import { CATEGORIA, ESTADO_ESPACIO, INCONSISTENCIA, VEHICULO } from '../../presentacion';
 import { Placa } from '../placa/placa';
 
 /**
@@ -21,10 +21,11 @@ import { Placa } from '../placa/placa';
 })
 export class MapaParqueadero {
   readonly espacios = input.required<Espacio[]>();
-  /** true: muestra aprendiz, hora, permanencia y explicación de inconsistencias. */
+  /** true: muestra usuario y categoría, hora, permanencia y explicación de inconsistencias. */
   readonly detallado = input(false);
 
   protected readonly reloj = inject(RelojService);
+  protected readonly categoria = CATEGORIA;
   protected readonly estado = ESTADO_ESPACIO;
   protected readonly vehiculo = VEHICULO;
   protected readonly textoInconsistencia = INCONSISTENCIA;

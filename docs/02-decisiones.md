@@ -19,6 +19,8 @@ el equipo; una vez **aceptadas**, solo se cambian agregando una nueva entrada qu
 | D-12 | Broker MQTT | EMQX Cloud (el de la plantilla del curso); Mosquitto local opcional | Propuesta |
 | D-13 | Orden del frontend | Construir la web primero con datos simulados, detrás de un contrato de API | Aceptada |
 | D-14 | Versión de Angular | Angular 21 (LTS) con Angular Material | Aceptada |
+| D-15 | Roles y categorías | Rol administrador o usuario; los usuarios se clasifican en aprendiz, instructor o administrativo | Aceptada |
+| D-16 | Reservas de espacios | No hay reservas: el espacio se asigna en la autorización y se ocupa al cruzar la barrera | Aceptada |
 
 ---
 
@@ -30,9 +32,9 @@ el equipo; una vez **aceptadas**, solo se cambian agregando una nueva entrada qu
 
 ### D-02 · Asignación de espacios
 
-- **Opciones:** automática · elegida por el aprendiz · asignada por el administrador.
+- **Opciones:** automática · elegida por el usuario · asignada por el administrador.
 - **Recomendación:** **automática** — el backend elige el primer espacio libre, compatible y confirmado como libre por su sensor. El administrador puede reasignar o marcar un espacio "fuera de servicio".
-- **Por qué:** es una de las funcionalidades diferenciadoras, evita conflictos entre aprendices y permite detectar si el vehículo se ubicó en otro espacio.
+- **Por qué:** es una de las funcionalidades diferenciadoras, evita conflictos entre usuarios y permite detectar si el vehículo se ubicó en otro espacio.
 
 ### D-03 · Método de identificación
 
@@ -73,7 +75,7 @@ el equipo; una vez **aceptadas**, solo se cambian agregando una nueva entrada qu
 ### D-08 · Canal de notificación
 
 - **Opciones:** bot de Telegram · correo (SMTP) · Web Push (PWA).
-- **Recomendación:** **bot de Telegram** para el administrador + notificaciones dentro de la app para el aprendiz.
+- **Recomendación:** **bot de Telegram** para el administrador + notificaciones dentro de la app para el usuario.
 - **Por qué:** gratuito, llega al celular en segundos, se implementa con una petición HTTP y es fácil de mostrar en vivo durante la presentación. Web Push requiere service worker, HTTPS y permisos del navegador; queda como mejora.
 - **Nota:** la plantilla del curso (`src/main.cpp` en `main`) publica mensajes en el tópico MQTT `notificaciones`. Es posible que el instructor considere eso como "la notificación" mínima; en ese caso Telegram es valor agregado. **⚠ Confirmar.**
 
@@ -118,3 +120,25 @@ el equipo; una vez **aceptadas**, solo se cambian agregando una nueva entrada qu
   evita problemas en los equipos del SENA. Tiene soporte de seguridad durante todo el proyecto.
 - **Nota:** se versiona `package-lock.json` y se instala con `npm ci`, porque npm 10 falla al resolver las
   dependencias de pruebas desde cero.
+
+### D-15 · Roles y categorías
+
+- **Decisión del equipo:** el parqueadero lo usan **aprendices, instructores y administrativos**, y lo gestiona un **administrador**.
+- **Cómo se modela:** dos conceptos separados.
+  - **Rol** (qué parte de la plataforma usa): `ADMINISTRADOR` → panel administrativo; `USUARIO` → app "Mi parqueadero".
+  - **Categoría** (quién es la persona; solo para usuarios): `APRENDIZ`, `INSTRUCTOR` o `ADMINISTRATIVO`.
+- **Importante:** *administrativo* es el personal que trabaja en oficina; **no** tiene permisos de administración.
+  El *administrador* es quien gestiona el parqueadero en la plataforma.
+- **Datos según la categoría:** aprendiz → programa, ficha y jornada · instructor → área de formación ·
+  administrativo → dependencia y cargo. Las reglas de acceso son las mismas para las tres categorías.
+- **Base de datos (Fase 3):** la tabla `aprendices` se reemplaza por `personas` (con `categoria`); las cuentas y su
+  rol quedan en `usuarios`.
+
+### D-16 · Sin reservas de espacios
+
+- **Decisión del equipo:** se elimina el estado *reservado* y la gestión de reservas.
+- **Cómo queda:** el espacio que asigna el backend viaja dentro de la autorización; el espacio sigue *libre* hasta que el
+  vehículo cruza la barrera, y en ese momento pasa a *ocupado* (RN-10). Si el vehículo no cruza, la autorización
+  expira y no hay nada que liberar (RN-08).
+- **Por qué no hay doble asignación:** hay una sola barrera y solo una autorización en curso a la vez (RN-13).
+- **Estados de un espacio:** libre, ocupado y fuera de servicio.

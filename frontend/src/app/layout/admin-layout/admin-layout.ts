@@ -25,7 +25,7 @@ interface ItemMenu {
 export const MENU_ADMIN: ItemMenu[] = [
   { ruta: 'dashboard', etiqueta: 'Dashboard', icono: 'dashboard' },
   { ruta: 'parqueadero', etiqueta: 'Parqueadero', icono: 'local_parking' },
-  { ruta: 'aprendices', etiqueta: 'Aprendices', icono: 'school' },
+  { ruta: 'usuarios', etiqueta: 'Usuarios', icono: 'groups' },
   { ruta: 'vehiculos', etiqueta: 'Vehículos', icono: 'directions_car' },
   { ruta: 'accesos', etiqueta: 'Control de accesos', icono: 'swap_horiz' },
   { ruta: 'estadisticas', etiqueta: 'Estadísticas', icono: 'bar_chart' },
@@ -72,8 +72,9 @@ export class AdminLayout {
   protected readonly iniciales = computed(() =>
     (this.usuario()?.nombre ?? '')
       .split(' ')
+      .filter((p) => p.length > 3)
       .slice(0, 2)
-      .map((p) => p[0])
+      .map((p) => p[0].toUpperCase())
       .join(''),
   );
 

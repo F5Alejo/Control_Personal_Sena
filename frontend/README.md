@@ -1,6 +1,6 @@
 # SENA SMART PARK · Plataforma web
 
-Panel administrativo y aplicación del aprendiz, en **Angular 21** con **Angular Material** y **Chart.js**.
+Panel administrativo y app del usuario (aprendices, instructores y administrativos), en **Angular 21** con **Angular Material** y **Chart.js**.
 Hoy funciona con **datos simulados**; el diseño y el contrato de datos están en
 [`docs/05-plataforma-web.md`](../docs/05-plataforma-web.md).
 
@@ -39,6 +39,8 @@ y abre `http://IP-DEL-PC:4200` en el celular (la IP aparece con `ipconfig` en Wi
 |---|---|---|
 | Administrador | `1000000000` | `admin123` |
 | Aprendiz | `1012345678` | `aprendiz123` |
+| Instructor | `79456123` | `instructor123` |
+| Administrativo (personal de oficina) | `52789456` | `administrativo123` |
 
 La pantalla de inicio de sesión tiene botones para llenarlos automáticamente.
 
@@ -62,11 +64,11 @@ src/
       api/                  Contrato ParqueaderoApi/AuthApi + implementación simulada
       auth/                 Sesión y guardas por rol
     shared/                 Mapa, gráfico, indicador, placa, pipes
-    layout/                 Panel (menú lateral) y app del aprendiz (navegación inferior)
+    layout/                 Panel (menú lateral) y app del usuario (navegación inferior)
     features/
       auth/login/
       admin/                dashboard, parqueadero, rutas del panel
-      aprendiz/             inicio, rutas de la app
+      usuario/              inicio, rutas de la app
 ```
 
 ## Conectar el backend real (Fase 3)

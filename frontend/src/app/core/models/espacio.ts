@@ -1,7 +1,8 @@
+import { Categoria } from './persona';
 import { TipoVehiculo } from './vehiculo';
 
-/** Estado lógico de un espacio según la base de datos (03-arquitectura §4). */
-export type EstadoEspacio = 'LIBRE' | 'OCUPADO' | 'RESERVADO' | 'FUERA_DE_SERVICIO';
+/** Estado lógico de un espacio según la base de datos (03-arquitectura §4). Sin reservas (D-16). */
+export type EstadoEspacio = 'LIBRE' | 'OCUPADO' | 'FUERA_DE_SERVICIO';
 
 /** Última lectura física del sensor del espacio, recibida por MQTT a través del backend. */
 export interface LecturaSensorEspacio {
@@ -14,13 +15,14 @@ export interface LecturaSensorEspacio {
   fecha: string;
 }
 
-/** Vehículo que ocupa (OCUPADO) o tiene reservado (RESERVADO) el espacio. */
+/** Vehículo que ocupa el espacio (acceso activo). */
 export interface OcupacionEspacio {
   accesoId: number;
-  aprendizId: number;
-  aprendiz: string;
+  personaId: number;
+  persona: string;
+  categoria: Categoria;
   placa: string;
-  /** Fecha ISO de ingreso (OCUPADO) o de autorización (RESERVADO). */
+  /** Fecha ISO en que el vehículo cruzó la barrera. */
   desde: string;
 }
 
@@ -41,7 +43,6 @@ export interface ResumenParqueadero {
   disponibles: number;
   /** Con un acceso activo registrado. */
   ocupados: number;
-  reservados: number;
   fueraDeServicio: number;
   /** Espacios donde los sensores detectan un vehículo. */
   vehiculosDetectados: number;

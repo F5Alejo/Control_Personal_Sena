@@ -13,9 +13,9 @@ export type Inconsistencia = 'OCUPADO_SIN_REGISTRO' | 'VEHICULO_NO_DETECTADO';
  * Compara el estado lógico del espacio con su sensor.
  * - Libre o fuera de servicio, pero el sensor detecta un vehículo → ocupado sin registro.
  * - Ocupado, pero el sensor no detecta nada → el vehículo no está en su espacio.
- * - Reservado: el vehículo va en camino, cualquier lectura es válida.
  *
- * En el sistema real la alerta se genera solo si la diferencia dura más de 60 s.
+ * En el sistema real la alerta se genera solo si la diferencia dura más de 60 s: es el tiempo que
+ * tiene el vehículo para llegar desde la barrera hasta su espacio (RN-10).
  */
 export function detectarInconsistencia(espacio: Espacio): Inconsistencia | null {
   const detecta = espacio.lectura.detectaVehiculo;
@@ -25,8 +25,6 @@ export function detectarInconsistencia(espacio: Espacio): Inconsistencia | null 
       return detecta ? 'OCUPADO_SIN_REGISTRO' : null;
     case 'OCUPADO':
       return detecta ? null : 'VEHICULO_NO_DETECTADO';
-    case 'RESERVADO':
-      return null;
   }
 }
 
@@ -68,7 +66,6 @@ export function calcularResumen(
     capacidad: espacios.length,
     disponibles: espacios.filter(estaDisponible).length,
     ocupados: contarEstado(espacios, 'OCUPADO'),
-    reservados: contarEstado(espacios, 'RESERVADO'),
     fueraDeServicio: contarEstado(espacios, 'FUERA_DE_SERVICIO'),
     vehiculosDetectados: espacios.filter((e) => e.lectura.detectaVehiculo).length,
     inconsistencias: espacios.filter((e) => detectarInconsistencia(e) !== null).length,

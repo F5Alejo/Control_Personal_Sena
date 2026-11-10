@@ -66,7 +66,7 @@
       <div class="sp-tarjeta__cabecera">
         <div>
           <h2>Detalle de espacios</h2>
-          <p>Vehículo, aprendiz y tiempo de permanencia.</p>
+          <p>Vehículo, usuario y tiempo de permanencia.</p>
         </div>
       </div>
       <div class="sp-tabla-contenedor">
@@ -76,7 +76,7 @@
               <th scope="col">Espacio</th>
               <th scope="col">Estado</th>
               <th scope="col">Placa</th>
-              <th scope="col">Aprendiz</th>
+              <th scope="col">Usuario</th>
               <th scope="col">Desde</th>
               <th scope="col">Permanencia</th>
               <th scope="col">Sensor</th>
@@ -106,7 +106,16 @@
                     —
                   }
                 </td>
-                <td>{{ e.ocupacion?.aprendiz ?? '—' }}</td>
+                <td>
+                  @if (e.ocupacion) {
+                    <span class="sp-persona">
+                      {{ e.ocupacion.persona
+                      }}<small>{{ categoria[e.ocupacion.categoria].etiqueta }}</small>
+                    </span>
+                  } @else {
+                    —
+                  }
+                </td>
                 <td>{{ e.ocupacion ? (e.ocupacion.desde | date: 'shortTime') : '—' }}</td>
                 <td>
                   {{

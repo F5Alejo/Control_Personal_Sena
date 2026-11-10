@@ -12,9 +12,14 @@ import { Indicador } from '../../../shared/components/indicador/indicador';
 import { MapaParqueadero } from '../../../shared/components/mapa-parqueadero/mapa-parqueadero';
 import { Placa } from '../../../shared/components/placa/placa';
 import { HacePipe } from '../../../shared/pipes/formatos.pipes';
-import { RESULTADO_MOVIMIENTO, SEVERIDAD, TIPO_MOVIMIENTO } from '../../../shared/presentacion';
+import {
+  CATEGORIA,
+  RESULTADO_MOVIMIENTO,
+  SEVERIDAD,
+  TIPO_MOVIMIENTO,
+} from '../../../shared/presentacion';
 
-/** "1 reservado", "2 reservados". */
+/** "1 rechazado", "2 rechazados". */
 const contar = (n: number, singular: string, plural: string) =>
   `${n} ${n === 1 ? singular : plural}`;
 
@@ -79,6 +84,7 @@ export class Dashboard {
   });
 
   protected readonly contar = contar;
+  protected readonly categoria = CATEGORIA;
   protected readonly resultado = RESULTADO_MOVIMIENTO;
   protected readonly tipoMovimiento = TIPO_MOVIMIENTO;
   protected readonly severidad = SEVERIDAD;

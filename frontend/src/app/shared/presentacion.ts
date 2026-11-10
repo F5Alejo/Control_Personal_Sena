@@ -1,6 +1,7 @@
 /** Textos, íconos y tonos de cada estado. Un estado nunca se muestra solo con color (siempre ícono + texto). */
 import { Inconsistencia } from '../core/domain/reglas-parqueadero';
 import {
+  Categoria,
   EstadoEspacio,
   ResultadoMovimiento,
   SeveridadAlerta,
@@ -8,7 +9,7 @@ import {
   TipoVehiculo,
 } from '../core/models';
 
-export type Tono = 'libre' | 'ocupado' | 'reservado' | 'fuera' | 'alerta' | 'info';
+export type Tono = 'libre' | 'ocupado' | 'fuera' | 'alerta' | 'info';
 
 export interface Presentacion {
   etiqueta: string;
@@ -19,7 +20,6 @@ export interface Presentacion {
 export const ESTADO_ESPACIO: Record<EstadoEspacio, Presentacion> = {
   LIBRE: { etiqueta: 'Libre', icono: 'check_circle', tono: 'libre' },
   OCUPADO: { etiqueta: 'Ocupado', icono: 'do_not_disturb_on', tono: 'ocupado' },
-  RESERVADO: { etiqueta: 'Reservado', icono: 'schedule', tono: 'reservado' },
   FUERA_DE_SERVICIO: { etiqueta: 'Fuera de servicio', icono: 'build', tono: 'fuera' },
 };
 
@@ -54,4 +54,11 @@ export const SEVERIDAD: Record<SeveridadAlerta, Presentacion> = {
 export const VEHICULO: Record<TipoVehiculo, { etiqueta: string; icono: string }> = {
   CARRO: { etiqueta: 'Carro', icono: 'directions_car' },
   MOTO: { etiqueta: 'Moto', icono: 'two_wheeler' },
+};
+
+/** Categorías de quien usa el parqueadero (D-15). "Administrativo" es personal de oficina, no el administrador. */
+export const CATEGORIA: Record<Categoria, { etiqueta: string; icono: string }> = {
+  APRENDIZ: { etiqueta: 'Aprendiz', icono: 'school' },
+  INSTRUCTOR: { etiqueta: 'Instructor', icono: 'co_present' },
+  ADMINISTRATIVO: { etiqueta: 'Administrativo', icono: 'work' },
 };

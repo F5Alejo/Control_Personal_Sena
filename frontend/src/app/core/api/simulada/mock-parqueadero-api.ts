@@ -62,13 +62,13 @@ export class MockParqueaderoApi extends ParqueaderoApi {
     return this.responder(this.datos.ocupacionPorHora);
   }
 
-  vehiculosDe(aprendizId: number): Observable<Vehiculo[]> {
-    return this.responder(this.datos.vehiculos.filter((v) => v.aprendizId === aprendizId));
+  vehiculosDe(personaId: number): Observable<Vehiculo[]> {
+    return this.responder(this.datos.vehiculos.filter((v) => v.personaId === personaId));
   }
 
-  accesoActivo(aprendizId: number): Observable<AccesoActivo | null> {
+  accesoActivo(personaId: number): Observable<AccesoActivo | null> {
     const espacio = this.datos.espacios.find(
-      (e) => e.estado === 'OCUPADO' && e.ocupacion?.aprendizId === aprendizId,
+      (e) => e.estado === 'OCUPADO' && e.ocupacion?.personaId === personaId,
     );
     const vehiculo = this.datos.vehiculos.find((v) => v.placa === espacio?.ocupacion?.placa);
     if (!espacio?.ocupacion || !vehiculo) return this.responder(null);
@@ -81,7 +81,7 @@ export class MockParqueaderoApi extends ParqueaderoApi {
     });
   }
 
-  notificaciones(aprendizId: number): Observable<Notificacion[]> {
-    return this.responder(this.datos.notificaciones[aprendizId] ?? []);
+  notificaciones(personaId: number): Observable<Notificacion[]> {
+    return this.responder(this.datos.notificaciones[personaId] ?? []);
   }
 }

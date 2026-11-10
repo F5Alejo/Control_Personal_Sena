@@ -9,6 +9,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { USUARIOS_DEMO } from '../../../core/api/simulada/mock-auth-api';
 import { AuthService } from '../../../core/auth/auth.service';
+import { CATEGORIA } from '../../../shared/presentacion';
 
 /** Inicio de sesión con documento y contraseña (RF-01). */
 @Component({
@@ -37,9 +38,10 @@ export class Login {
   protected readonly enviando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly verContrasena = signal(false);
+  // Una cuenta por tipo: administrador del sistema y usuarios de cada categoría.
   protected readonly demos = USUARIOS_DEMO.map((u) => ({
-    rol: u.usuario.rol === 'ADMIN' ? 'Administrador' : 'Aprendiz',
-    icono: u.usuario.rol === 'ADMIN' ? 'admin_panel_settings' : 'school',
+    rol: u.usuario.categoria ? CATEGORIA[u.usuario.categoria].etiqueta : 'Administrador',
+    icono: u.usuario.categoria ? CATEGORIA[u.usuario.categoria].icono : 'admin_panel_settings',
     documento: u.usuario.documento,
     contrasena: u.contrasena,
   }));

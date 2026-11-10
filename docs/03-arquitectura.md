@@ -28,7 +28,7 @@ flowchart LR
 
     subgraph CLI["Clientes web (Angular)"]
         ADM["Panel administrativo"]
-        APP["App del aprendiz<br/>(celular)"]
+        APP["App del usuario<br/>aprendiz, instructor<br/>o administrativo"]
         KIO["Kiosco QR<br/>(portátil o tablet)"]
     end
 
@@ -55,7 +55,7 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Ap as Aprendiz (celular)
+    actor Ap as Usuario (celular)
     participant K as Kiosco QR
     participant API as Backend
     participant DB as PostgreSQL
@@ -68,19 +68,19 @@ sequenceDiagram
     API-->>K: token aleatorio que vence en 60 s
     Ap->>K: escanea el QR
     Ap->>API: inicia sesión, elige vehículo y envía el token
-    API->>DB: valida token, aprendiz, vehículo, ingreso activo y cupo
+    API->>DB: valida token, usuario, vehículo, ingreso activo y cupo
     alt solicitud válida
-        API->>DB: crea autorización y reserva el espacio P03
+        API->>DB: crea la autorización con el espacio asignado P03
         API->>MQ: barrera/abrir con id de comando
         MQ->>E: comando
         E->>E: servo abre, matriz muestra ✓, LCD muestra P03
         E->>MQ: confirmación (ack) del comando
         E->>MQ: paso IR-A → IR-B (entrada)
         MQ->>API: evento de paso
-        API->>DB: registra el acceso de entrada
+        API->>DB: registra la entrada y P03 pasa a OCUPADO
         E->>E: ambos IR libres, el servo cierra
         E->>MQ: sensor de P03 ocupado
-        API->>DB: P03 pasa a OCUPADO
+        API->>DB: sensor confirma la ocupación
         API-->>Ap: ingreso registrado, espacio P03
     else solicitud rechazada
         API->>DB: registra el intento rechazado y la alerta
@@ -92,7 +92,7 @@ sequenceDiagram
 ```
 
 **Validaciones del backend (en orden):** token existe, no ha vencido y no se ha usado → sesión válida →
-aprendiz activo y autorizado → vehículo del aprendiz y aprobado → no tiene ingreso activo (RN-01) →
+usuario activo y autorizado → vehículo del usuario y aprobado → no tiene ingreso activo (RN-01) →
 hay vehículo frente a la barrera (RN-06) → hay espacio libre compatible (RN-11) → dentro del horario configurado.
 
 ### Flujo de salida
@@ -103,12 +103,13 @@ confirmarse se registra la fecha de salida, y el espacio vuelve a **LIBRE** solo
 
 ## 4. Estados de un espacio
 
+No hay reservas (D-16): el espacio asignado viaja en la autorización y solo cambia a *ocupado* cuando el
+vehículo cruza la barrera.
+
 ```mermaid
 stateDiagram-v2
     [*] --> LIBRE
-    LIBRE --> RESERVADO: autorización de ingreso
-    RESERVADO --> OCUPADO: sensor detecta el vehículo
-    RESERVADO --> LIBRE: vence el tiempo sin ingreso (RN-08)
+    LIBRE --> OCUPADO: el vehículo cruza la barrera (RN-10)
     OCUPADO --> LIBRE: salida confirmada y sensor libre (RN-05)
     LIBRE --> FUERA_DE_SERVICIO: administrador
     FUERA_DE_SERVICIO --> LIBRE: administrador
@@ -118,7 +119,7 @@ stateDiagram-v2
 
 ```mermaid
 stateDiagram-v2
-    [*] --> SOLICITADA: aprendiz envía token y vehículo
+    [*] --> SOLICITADA: usuario envía token y vehículo
     SOLICITADA --> RECHAZADA: falla una validación
     SOLICITADA --> APROBADA: validaciones correctas
     APROBADA --> EJECUTADA: ESP32 confirma barrera abierta

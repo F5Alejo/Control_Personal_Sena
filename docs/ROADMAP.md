@@ -60,7 +60,7 @@ al desconectar el ESP32, aparece `offline` en ≤ 30 s.
 
 1. Modelo entidad-relación y migraciones en PostgreSQL.
 2. Autenticación y roles.
-3. Gestión de aprendices, vehículos y espacios.
+3. Gestión de usuarios (aprendices, instructores y administrativos), vehículos y espacios.
 4. Servicio de tokens QR (generación, vigencia, un solo uso).
 5. Validación de accesos y asignación de espacios.
 6. Puente MQTT (comandos, eventos, confirmaciones) y WebSocket para tiempo real.
@@ -73,10 +73,10 @@ provocada genera una alerta y una notificación.
 
 > Adelantada con datos simulados (D-13). Detalle e incrementos en [`05-plataforma-web.md`](05-plataforma-web.md).
 
-1. ✅ Sistema de diseño (colores institucionales, componentes base), inicio de sesión, estructuras, Dashboard, Parqueadero e inicio del aprendiz (incremento 4.1).
+1. ✅ Sistema de diseño (colores institucionales, componentes base), inicio de sesión, estructuras, Dashboard, Parqueadero e inicio del usuario (incremento 4.1).
 2. Kiosco QR.
-3. App del aprendiz: inicio de sesión, mis vehículos, acceso QR, mi parqueadero, mis movimientos.
-4. Panel administrativo: dashboard, mapa en tiempo real, aprendices, vehículos, accesos, dispositivos, alertas.
+3. App del usuario: inicio de sesión, mis vehículos, acceso QR, mi parqueadero, mis movimientos.
+4. Panel administrativo: dashboard, mapa en tiempo real, usuarios, vehículos, accesos, dispositivos, alertas.
 5. Estadísticas y configuración.
 
 **Terminado cuando:** el flujo completo de ingreso y salida se hace desde el celular y el panel se actualiza en vivo.

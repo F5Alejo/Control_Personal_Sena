@@ -24,7 +24,7 @@
       icono="check_circle"
       tono="libre"
       [valor]="r?.disponibles"
-      [detalle]="r ? contar(r.reservados, 'reservado', 'reservados') : undefined"
+      detalle="Libres y confirmados por sensores"
     />
     <app-indicador
       etiqueta="Ocupados"
@@ -62,7 +62,6 @@
         <div class="leyenda">
           <span class="sp-chip sp-tono--libre"><span class="sp-punto"></span>Libre</span>
           <span class="sp-chip sp-tono--ocupado"><span class="sp-punto"></span>Ocupado</span>
-          <span class="sp-chip sp-tono--reservado"><span class="sp-punto"></span>Reservado</span>
         </div>
       </div>
       @if (espacios(); as lista) {
@@ -200,7 +199,7 @@
                 <th scope="col">Hora</th>
                 <th scope="col">Movimiento</th>
                 <th scope="col">Placa</th>
-                <th scope="col">Aprendiz</th>
+                <th scope="col">Usuario</th>
                 <th scope="col">Espacio</th>
                 <th scope="col">Resultado</th>
               </tr>
@@ -223,7 +222,15 @@
                       <span class="sin-dato">Sin identificar</span>
                     }
                   </td>
-                  <td>{{ m.aprendiz ?? '—' }}</td>
+                  <td>
+                    @if (m.persona && m.categoria) {
+                      <span class="sp-persona">
+                        {{ m.persona }}<small>{{ categoria[m.categoria].etiqueta }}</small>
+                      </span>
+                    } @else {
+                      —
+                    }
+                  </td>
                   <td>{{ m.espacio ?? '—' }}</td>
                   <td>
                     <span class="sp-chip" [class]="'sp-tono--' + res.tono">

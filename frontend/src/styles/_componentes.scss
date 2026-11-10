@@ -118,10 +118,6 @@
   --chip-color: var(--sp-ocupado);
   --chip-fondo: var(--sp-ocupado-fondo);
 }
-.sp-tono--reservado {
-  --chip-color: var(--sp-reservado);
-  --chip-fondo: var(--sp-reservado-fondo);
-}
 .sp-tono--fuera {
   --chip-color: var(--sp-fuera);
   --chip-fondo: var(--sp-fuera-fondo);
@@ -133,6 +129,18 @@
 .sp-tono--info {
   --chip-color: var(--sp-info);
   --chip-fondo: var(--sp-info-fondo);
+}
+
+// Nombre de una persona con su categoría debajo
+.sp-persona {
+  display: inline-flex;
+  flex-direction: column;
+  color: var(--sp-texto);
+
+  small {
+    font-size: 0.75rem;
+    color: var(--sp-texto-3);
+  }
 }
 
 // Tabla simple

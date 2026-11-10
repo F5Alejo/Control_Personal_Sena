@@ -3,25 +3,27 @@
  * Las fechas se calculan relativas al momento en que se abre la app, para que siempre se vean recientes.
  *
  * Historia que cuentan los datos:
- * - Laura está dentro con su carro en P01.
- * - Camila acaba de ser autorizada: P03 está reservado mientras llega.
+ * - Laura (aprendiz) está dentro con su carro en P01.
+ * - Carlos (instructor) ingresó hace 25 min y está en P03.
+ * - Patricia (administrativa, Bienestar) ya salió; no tiene vehículos dentro.
  * - Hace 14 min alguien usó la apertura manual y una moto sin registro quedó en P04 → inconsistencia.
  * - A Andrés le rechazaron el ingreso porque su moto aún no está aprobada.
  */
 import {
   Alerta,
-  Aprendiz,
+  Categoria,
   Dispositivo,
   Espacio,
   LecturaAmbiental,
   Movimiento,
   Notificacion,
   OcupacionPorHora,
+  Persona,
   Vehiculo,
 } from '../../models';
 
 export interface DatosFicticios {
-  aprendices: Aprendiz[];
+  personas: Persona[];
   vehiculos: Vehiculo[];
   espacios: Espacio[];
   movimientos: Movimiento[];
@@ -33,9 +35,10 @@ export interface DatosFicticios {
 export function crearDatosFicticios(ahora: Date): DatosFicticios {
   const hace = (minutos: number) => new Date(ahora.getTime() - minutos * 60_000).toISOString();
 
-  const aprendices: Aprendiz[] = [
+  const personas: Persona[] = [
     {
       id: 1,
+      categoria: 'APRENDIZ',
       documento: '1012345678',
       nombres: 'Laura',
       apellidos: 'Gómez Ríos',
@@ -47,6 +50,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
     },
     {
       id: 2,
+      categoria: 'APRENDIZ',
       documento: '1023456789',
       nombres: 'Andrés Felipe',
       apellidos: 'Rojas',
@@ -58,6 +62,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
     },
     {
       id: 3,
+      categoria: 'APRENDIZ',
       documento: '1034567890',
       nombres: 'Camila',
       apellidos: 'Torres Peña',
@@ -69,6 +74,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
     },
     {
       id: 4,
+      categoria: 'APRENDIZ',
       documento: '1045678901',
       nombres: 'Valentina',
       apellidos: 'Castro',
@@ -80,6 +86,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
     },
     {
       id: 5,
+      categoria: 'APRENDIZ',
       documento: '1056789012',
       nombres: 'Mateo',
       apellidos: 'Herrera Díaz',
@@ -91,6 +98,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
     },
     {
       id: 6,
+      categoria: 'APRENDIZ',
       documento: '1067890123',
       nombres: 'Santiago',
       apellidos: 'Mora',
@@ -102,6 +110,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
     },
     {
       id: 7,
+      categoria: 'APRENDIZ',
       documento: '1078901234',
       nombres: 'Daniela',
       apellidos: 'Suárez',
@@ -110,6 +119,37 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       ficha: '2880034',
       jornada: 'Tarde',
       autorizado: false,
+    },
+    {
+      id: 8,
+      categoria: 'INSTRUCTOR',
+      documento: '79456123',
+      nombres: 'Carlos Andrés',
+      apellidos: 'Medina',
+      correo: 'carlos.medina@ejemplo.edu.co',
+      area: 'Teleinformática',
+      autorizado: true,
+    },
+    {
+      id: 9,
+      categoria: 'ADMINISTRATIVO',
+      documento: '52789456',
+      nombres: 'Patricia',
+      apellidos: 'León Vargas',
+      correo: 'patricia.leon@ejemplo.edu.co',
+      dependencia: 'Bienestar al Aprendiz',
+      cargo: 'Profesional de bienestar',
+      autorizado: true,
+    },
+    {
+      id: 10,
+      categoria: 'INSTRUCTOR',
+      documento: '80123987',
+      nombres: 'Jorge Iván',
+      apellidos: 'Pardo',
+      correo: 'jorge.pardo@ejemplo.edu.co',
+      area: 'Electricidad y Electrónica',
+      autorizado: true,
     },
   ];
 
@@ -121,7 +161,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       marca: 'Chevrolet',
       modelo: 'Spark GT',
       color: 'Gris',
-      aprendizId: 1,
+      personaId: 1,
       estado: 'APROBADO',
     },
     {
@@ -131,7 +171,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       marca: 'Honda',
       modelo: 'CB 125F',
       color: 'Negra',
-      aprendizId: 1,
+      personaId: 1,
       estado: 'APROBADO',
     },
     {
@@ -141,7 +181,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       marca: 'AKT',
       modelo: 'NKD 125',
       color: 'Roja',
-      aprendizId: 2,
+      personaId: 2,
       estado: 'PENDIENTE',
     },
     {
@@ -151,7 +191,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       marca: 'Renault',
       modelo: 'Logan',
       color: 'Blanco',
-      aprendizId: 3,
+      personaId: 3,
       estado: 'APROBADO',
     },
     {
@@ -161,7 +201,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       marca: 'Mazda',
       modelo: '2',
       color: 'Rojo',
-      aprendizId: 4,
+      personaId: 4,
       estado: 'APROBADO',
     },
     {
@@ -171,7 +211,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       marca: 'Kia',
       modelo: 'Picanto',
       color: 'Azul',
-      aprendizId: 5,
+      personaId: 5,
       estado: 'APROBADO',
     },
     {
@@ -181,7 +221,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       marca: 'Yamaha',
       modelo: 'FZ 2.0',
       color: 'Negra',
-      aprendizId: 6,
+      personaId: 6,
       estado: 'APROBADO',
     },
     {
@@ -191,10 +231,46 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       marca: 'Nissan',
       modelo: 'March',
       color: 'Plata',
-      aprendizId: 7,
+      personaId: 7,
+      estado: 'APROBADO',
+    },
+    {
+      id: 9,
+      placa: 'SNA318',
+      tipo: 'CARRO',
+      marca: 'Renault',
+      modelo: 'Duster',
+      color: 'Gris',
+      personaId: 8,
+      estado: 'APROBADO',
+    },
+    {
+      id: 10,
+      placa: 'SNA415',
+      tipo: 'CARRO',
+      marca: 'Chevrolet',
+      modelo: 'Onix',
+      color: 'Blanco',
+      personaId: 9,
+      estado: 'APROBADO',
+    },
+    {
+      id: 11,
+      placa: 'SNA81D',
+      tipo: 'MOTO',
+      marca: 'Suzuki',
+      modelo: 'Gixxer 150',
+      color: 'Azul',
+      personaId: 10,
       estado: 'APROBADO',
     },
   ];
+
+  /** Nombre completo y categoría para mostrar en accesos y espacios. */
+  const quien = (personaId: number): { persona: string; categoria: Categoria } => {
+    const p = personas.find((x) => x.id === personaId)!;
+    return { persona: `${p.nombres} ${p.apellidos}`, categoria: p.categoria };
+  };
 
   const espacios: Espacio[] = [
     {
@@ -202,13 +278,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       tipo: 'CARRO',
       estado: 'OCUPADO',
       lectura: { sensor: 'HC-SR04', detectaVehiculo: true, distanciaCm: 4.1, fecha: hace(0.2) },
-      ocupacion: {
-        accesoId: 106,
-        aprendizId: 1,
-        aprendiz: 'Laura Gómez Ríos',
-        placa: 'SNA101',
-        desde: hace(135),
-      },
+      ocupacion: { accesoId: 107, personaId: 1, ...quien(1), placa: 'SNA101', desde: hace(135) },
     },
     {
       codigo: 'P02',
@@ -219,15 +289,9 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
     {
       codigo: 'P03',
       tipo: 'CARRO',
-      estado: 'RESERVADO',
-      lectura: { sensor: 'IR', detectaVehiculo: false, fecha: hace(0.3) },
-      ocupacion: {
-        accesoId: 112,
-        aprendizId: 3,
-        aprendiz: 'Camila Torres Peña',
-        placa: 'SNA303',
-        desde: hace(1),
-      },
+      estado: 'OCUPADO',
+      lectura: { sensor: 'IR', detectaVehiculo: true, fecha: hace(0.3) },
+      ocupacion: { accesoId: 111, personaId: 8, ...quien(8), placa: 'SNA318', desde: hace(25) },
     },
     {
       codigo: 'P04',
@@ -240,70 +304,90 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
   // Más recientes primero; los ids crecen en orden cronológico.
   const movimientos: Movimiento[] = [
     {
-      id: 111,
+      id: 113,
       fecha: hace(9),
       tipo: 'ENTRADA',
       resultado: 'RECHAZADO',
       placa: 'SNA45E',
       tipoVehiculo: 'MOTO',
-      aprendiz: 'Andrés Felipe Rojas',
+      ...quien(2),
       motivo: 'Vehículo pendiente de aprobación',
     },
     {
-      id: 110,
+      id: 112,
       fecha: hace(14),
       tipo: 'ENTRADA',
       resultado: 'MANUAL',
       motivo: 'Apertura con el botón táctil de la portería',
     },
     {
-      id: 109,
+      id: 111,
+      fecha: hace(25),
+      tipo: 'ENTRADA',
+      resultado: 'AUTORIZADO',
+      placa: 'SNA318',
+      tipoVehiculo: 'CARRO',
+      ...quien(8),
+      espacio: 'P03',
+    },
+    {
+      id: 110,
       fecha: hace(38),
       tipo: 'SALIDA',
       resultado: 'AUTORIZADO',
       placa: 'SNA588',
       tipoVehiculo: 'CARRO',
-      aprendiz: 'Valentina Castro',
+      ...quien(4),
       espacio: 'P02',
     },
     {
-      id: 108,
+      id: 109,
       fecha: hace(65),
       tipo: 'SALIDA',
       resultado: 'AUTORIZADO',
       placa: 'SNA712',
       tipoVehiculo: 'CARRO',
-      aprendiz: 'Mateo Herrera Díaz',
+      ...quien(5),
       espacio: 'P03',
     },
     {
-      id: 107,
+      id: 108,
       fecha: hace(112),
       tipo: 'ENTRADA',
       resultado: 'AUTORIZADO',
       placa: 'SNA712',
       tipoVehiculo: 'CARRO',
-      aprendiz: 'Mateo Herrera Díaz',
+      ...quien(5),
       espacio: 'P03',
     },
     {
-      id: 106,
+      id: 107,
       fecha: hace(135),
       tipo: 'ENTRADA',
       resultado: 'AUTORIZADO',
       placa: 'SNA101',
       tipoVehiculo: 'CARRO',
-      aprendiz: 'Laura Gómez Ríos',
+      ...quien(1),
       espacio: 'P01',
     },
     {
-      id: 105,
+      id: 106,
       fecha: hace(160),
       tipo: 'ENTRADA',
       resultado: 'AUTORIZADO',
       placa: 'SNA588',
       tipoVehiculo: 'CARRO',
-      aprendiz: 'Valentina Castro',
+      ...quien(4),
+      espacio: 'P02',
+    },
+    {
+      id: 105,
+      fecha: hace(170),
+      tipo: 'SALIDA',
+      resultado: 'AUTORIZADO',
+      placa: 'SNA415',
+      tipoVehiculo: 'CARRO',
+      ...quien(9),
       espacio: 'P02',
     },
     {
@@ -313,7 +397,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       resultado: 'AUTORIZADO',
       placa: 'SNA29B',
       tipoVehiculo: 'MOTO',
-      aprendiz: 'Santiago Mora',
+      ...quien(6),
       espacio: 'P04',
     },
     {
@@ -323,7 +407,7 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       resultado: 'AUTORIZADO',
       placa: 'SNA29B',
       tipoVehiculo: 'MOTO',
-      aprendiz: 'Santiago Mora',
+      ...quien(6),
       espacio: 'P04',
     },
     {
@@ -333,8 +417,18 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
       resultado: 'RECHAZADO',
       placa: 'SNA640',
       tipoVehiculo: 'CARRO',
-      aprendiz: 'Daniela Suárez',
-      motivo: 'Aprendiz sin autorización vigente',
+      ...quien(7),
+      motivo: 'Persona sin autorización vigente',
+    },
+    {
+      id: 101,
+      fecha: hace(300),
+      tipo: 'ENTRADA',
+      resultado: 'AUTORIZADO',
+      placa: 'SNA415',
+      tipoVehiculo: 'CARRO',
+      ...quien(9),
+      espacio: 'P02',
     },
   ];
 
@@ -410,17 +504,45 @@ export function crearDatosFicticios(ahora: Date): DatosFicticios {
         leida: true,
       },
     ],
+    8: [
+      {
+        id: 5,
+        fecha: hace(25),
+        tipo: 'INGRESO',
+        titulo: 'Ingreso registrado',
+        detalle: 'SNA 318 · espacio P03',
+        leida: false,
+      },
+      {
+        id: 4,
+        fecha: hace(60 * 22),
+        tipo: 'SALIDA',
+        titulo: 'Salida registrada',
+        detalle: 'SNA 318 · permanencia de 8 h 5 min',
+        leida: true,
+      },
+    ],
+    9: [
+      {
+        id: 7,
+        fecha: hace(170),
+        tipo: 'SALIDA',
+        titulo: 'Salida registrada',
+        detalle: 'SNA 415 · permanencia de 2 h 10 min',
+        leida: false,
+      },
+      {
+        id: 6,
+        fecha: hace(300),
+        tipo: 'INGRESO',
+        titulo: 'Ingreso registrado',
+        detalle: 'SNA 415 · espacio P02',
+        leida: true,
+      },
+    ],
   };
 
-  return {
-    aprendices,
-    vehiculos,
-    espacios,
-    movimientos,
-    alertas,
-    ocupacionPorHora,
-    notificaciones,
-  };
+  return { personas, vehiculos, espacios, movimientos, alertas, ocupacionPorHora, notificaciones };
 }
 
 /** Estado del ESP32 de la portería. Se genera en cada consulta para simular el heartbeat. */

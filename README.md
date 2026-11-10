@@ -3,12 +3,12 @@
 **Sistema inteligente de gestión y control de parqueaderos institucionales.**
 
 Prototipo IoT académico que controla el ingreso, la permanencia y la salida de vehículos en el parqueadero del SENA:
-el aprendiz escanea un **QR dinámico** con su celular, el backend valida su identidad y su vehículo, y un **ESP32**
+el usuario —aprendiz, instructor o administrativo— escanea un **QR dinámico** con su celular, el backend valida su identidad y su vehículo, y un **ESP32**
 levanta la barrera, detecta el paso y monitorea la ocupación de cada espacio. Todo se comunica por **MQTT** y se
 administra desde una **plataforma web responsive** en tiempo real.
 
 > **Estado actual:** Fase 0 (definición) en cierre y **plataforma web 4.1** lista con datos simulados:
-> inicio de sesión, Dashboard, Parqueadero e inicio del aprendiz. Ver la [hoja de ruta](docs/ROADMAP.md)
+> inicio de sesión, Dashboard, Parqueadero e inicio del usuario. Ver la [hoja de ruta](docs/ROADMAP.md)
 > y cómo ejecutar la web en [`frontend/README.md`](frontend/README.md).
 
 ## Requisitos del curso → cumplimiento
@@ -19,7 +19,7 @@ administra desde una **plataforma web responsive** en tiempo real.
 | 2 actuadores | Servo SG90 (barrera) · Relé (baliza "PARQUEADERO LLENO") |
 | 3 sensores | IR LM393 + IR TCRT5000 (paso y dirección en la barrera) · HC-SR04 (ocupación) · *extra:* PIR, DHT11 |
 | MQTT | EMQX Cloud (plantilla del curso) o Mosquitto local |
-| Web / aplicación | Angular responsive: panel administrativo + app del aprendiz + kiosco QR |
+| Web / aplicación | Angular responsive: panel administrativo + app del usuario + kiosco QR |
 | 1 notificación | Bot de Telegram para el administrador + notificaciones en la app |
 | ★ Agente | Agente supervisor de inconsistencias (propuesta) |
 
@@ -50,7 +50,7 @@ firmware/      ESP32 · C++ con framework Arduino (PlatformIO)       → Fase 1
 maqueta/       Diagrama eléctrico y planos de la maqueta             → Fase 1
 infra/         PostgreSQL, Docker Compose (y Mosquitto si se usa local) → Fase 2
 backend/       API REST, puente MQTT y WebSocket                     → Fase 3
-frontend/      Angular: panel administrativo, app del aprendiz, kiosco → Fase 4 (ya iniciada)
+frontend/      Angular: panel administrativo, app del usuario, kiosco  → Fase 4 (ya iniciada)
 presentacion/  Diapositivas y video de la demo                       → Fase 5
 ```
 
@@ -62,5 +62,5 @@ presentacion/  Diapositivas y video de la demo                       → Fase 5
 
 ## Datos personales
 
-El sistema trata datos de aprendices y placas, protegidos por la **Ley 1581 de 2012**. En este repositorio y en el
+El sistema trata datos de aprendices, instructores, administrativos y placas, protegidos por la **Ley 1581 de 2012**. En este repositorio y en el
 prototipo se usan **únicamente datos ficticios**; nunca se suben documentos, nombres ni placas reales.

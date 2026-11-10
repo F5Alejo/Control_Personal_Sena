@@ -1,12 +1,13 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { CATEGORIA } from '../../shared/presentacion';
 
-/** Navegación inferior de la app del aprendiz: cinco destinos, alcanzables con el pulgar. */
+/** Navegación inferior de la app "Mi parqueadero": cinco destinos, alcanzables con el pulgar. */
 const NAVEGACION = [
   { ruta: 'inicio', etiqueta: 'Inicio', icono: 'home' },
   { ruta: 'vehiculos', etiqueta: 'Vehículos', icono: 'directions_car' },
@@ -16,7 +17,7 @@ const NAVEGACION = [
 ];
 
 @Component({
-  selector: 'app-aprendiz-layout',
+  selector: 'app-usuario-layout',
   imports: [
     MatButtonModule,
     MatDividerModule,
@@ -44,7 +45,7 @@ const NAVEGACION = [
         <mat-menu #menu="matMenu" xPosition="before">
           <div class="cuenta">
             <strong>{{ usuario()?.nombre }}</strong>
-            <small>Aprendiz · {{ usuario()?.documento }}</small>
+            <small>{{ categoria() }} · {{ usuario()?.documento }}</small>
           </div>
           <mat-divider />
           <button mat-menu-item type="button" (click)="cerrarSesion()">
@@ -192,12 +193,17 @@ const NAVEGACION = [
     }
   `,
 })
-export class AprendizLayout {
+/** Estructura de la app para aprendices, instructores y administrativos. */
+export class UsuarioLayout {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   protected readonly navegacion = NAVEGACION;
   protected readonly usuario = this.auth.usuario;
+  protected readonly categoria = computed(() => {
+    const c = this.usuario()?.categoria;
+    return c ? CATEGORIA[c].etiqueta : '';
+  });
 
   protected cerrarSesion(): void {
     this.auth.cerrarSesion();

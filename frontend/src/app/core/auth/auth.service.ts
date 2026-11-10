@@ -50,6 +50,6 @@ export class AuthService {
   /** Pantalla de inicio según el rol. */
   rutaInicio(usuario: Usuario | null = this._usuario()): string {
     if (!usuario) return '/login';
-    return usuario.rol === 'ADMIN' ? '/admin' : '/app';
+    return usuario.rol === 'ADMINISTRADOR' ? '/admin' : '/app';
   }
 }

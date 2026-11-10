@@ -12,6 +12,7 @@ export interface Vehiculo {
   marca: string;
   modelo: string;
   color: string;
-  aprendizId: number;
+  /** Propietario: aprendiz, instructor o administrativo. */
+  personaId: number;
   estado: EstadoVehiculo;
 }

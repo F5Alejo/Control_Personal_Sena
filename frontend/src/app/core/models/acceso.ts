@@ -1,3 +1,4 @@
+import { Categoria } from './persona';
 import { TipoVehiculo } from './vehiculo';
 
 export type TipoMovimiento = 'ENTRADA' | 'SALIDA';
@@ -13,12 +14,13 @@ export interface Movimiento {
   resultado: ResultadoMovimiento;
   placa?: string;
   tipoVehiculo?: TipoVehiculo;
-  aprendiz?: string;
+  persona?: string;
+  categoria?: Categoria;
   espacio?: string;
   motivo?: string;
 }
 
-/** Acceso en curso de un aprendiz (RN-04: fecha de salida nula). */
+/** Acceso en curso de una persona (RN-04: fecha de salida nula). */
 export interface AccesoActivo {
   accesoId: number;
   placa: string;

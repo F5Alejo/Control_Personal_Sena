@@ -25,10 +25,12 @@
           @if (e.ocupacion) {
             <app-placa [placa]="e.ocupacion.placa" />
             @if (detallado()) {
-              <p class="espacio__dato">{{ e.ocupacion.aprendiz }}</p>
+              <p class="espacio__dato">{{ e.ocupacion.persona }}</p>
               <p class="espacio__dato espacio__dato--suave">
-                {{ e.estado === 'OCUPADO' ? 'Ingresó' : 'Autorizado' }}
-                {{ e.ocupacion.desde | date: 'shortTime' }} ·
+                {{ categoria[e.ocupacion.categoria].etiqueta }}
+              </p>
+              <p class="espacio__dato espacio__dato--suave">
+                Ingresó {{ e.ocupacion.desde | date: 'shortTime' }} ·
                 {{ e.ocupacion.desde | duracion: reloj.ahora() }}
               </p>
             }

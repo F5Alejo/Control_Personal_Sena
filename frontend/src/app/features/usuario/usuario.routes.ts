@@ -11,8 +11,8 @@ const pendiente = (path: string, datos: DatosModulo) => ({
     ),
 });
 
-/** Rutas de la aplicación del aprendiz (optimizada para celulares). */
-export const RUTAS_APRENDIZ: Routes = [
+/** Rutas de la app "Mi parqueadero" para aprendices, instructores y administrativos (optimizada para celulares). */
+export const RUTAS_USUARIO: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'inicio' },
   {
     path: 'inicio',
@@ -55,14 +55,15 @@ export const RUTAS_APRENDIZ: Routes = [
   }),
   pendiente('perfil', {
     titulo: 'Mi perfil',
-    descripcion: 'Tus datos académicos y tu estado de autorización.',
+    descripcion: 'Tus datos y tu estado de autorización.',
     icono: 'person',
     incremento: '4.2',
     funciones: [
-      'Nombre y documento',
-      'Programa de formación, ficha y jornada',
-      'Estado de autorización',
-      'Cambio de contraseña',
+      'Nombre, documento y categoría (aprendiz, instructor o administrativo)',
+      'Aprendices: programa de formación, ficha y jornada',
+      'Instructores: área de formación',
+      'Administrativos: dependencia y cargo',
+      'Estado de autorización y cambio de contraseña',
     ],
   }),
 ];

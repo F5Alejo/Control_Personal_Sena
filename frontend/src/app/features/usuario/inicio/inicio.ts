@@ -11,7 +11,7 @@ import { TipoNotificacion, TipoVehiculo } from '../../../core/models';
 import { RelojService } from '../../../core/util/reloj.service';
 import { Placa } from '../../../shared/components/placa/placa';
 import { DuracionPipe, HacePipe } from '../../../shared/pipes/formatos.pipes';
-import { VEHICULO } from '../../../shared/presentacion';
+import { CATEGORIA, VEHICULO } from '../../../shared/presentacion';
 
 const ICONO_NOTIFICACION: Record<TipoNotificacion, string> = {
   INGRESO: 'login',
@@ -20,7 +20,7 @@ const ICONO_NOTIFICACION: Record<TipoNotificacion, string> = {
   INFO: 'info',
 };
 
-/** "Mi parqueadero": vehículo activo, disponibilidad y notificaciones del aprendiz. */
+/** "Mi parqueadero": vehículo activo, disponibilidad y notificaciones del usuario. */
 @Component({
   selector: 'app-inicio',
   imports: [DatePipe, MatButtonModule, MatIconModule, RouterLink, Placa, DuracionPipe, HacePipe],
@@ -30,13 +30,17 @@ const ICONO_NOTIFICACION: Record<TipoNotificacion, string> = {
 export class Inicio {
   private readonly api = inject(ParqueaderoApi);
   private readonly usuario = inject(AuthService).usuario;
-  private readonly aprendizId = this.usuario()?.aprendizId ?? 0;
+  private readonly personaId = this.usuario()?.personaId ?? 0;
 
   protected readonly reloj = inject(RelojService);
   protected readonly nombre = computed(() => this.usuario()?.nombre.split(' ')[0] ?? '');
-  protected readonly acceso = toSignal(this.api.accesoActivo(this.aprendizId));
+  protected readonly categoria = computed(() => {
+    const c = this.usuario()?.categoria;
+    return c ? CATEGORIA[c] : undefined;
+  });
+  protected readonly acceso = toSignal(this.api.accesoActivo(this.personaId));
   protected readonly espacios = toSignal(this.api.espacios());
-  protected readonly notificaciones = toSignal(this.api.notificaciones(this.aprendizId));
+  protected readonly notificaciones = toSignal(this.api.notificaciones(this.personaId));
 
   protected readonly vehiculo = VEHICULO;
   protected readonly iconoNotificacion = ICONO_NOTIFICACION;

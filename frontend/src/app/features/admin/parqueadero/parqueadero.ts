@@ -9,7 +9,7 @@ import { RelojService } from '../../../core/util/reloj.service';
 import { MapaParqueadero } from '../../../shared/components/mapa-parqueadero/mapa-parqueadero';
 import { Placa } from '../../../shared/components/placa/placa';
 import { DuracionPipe } from '../../../shared/pipes/formatos.pipes';
-import { ESTADO_ESPACIO, INCONSISTENCIA, VEHICULO } from '../../../shared/presentacion';
+import { CATEGORIA, ESTADO_ESPACIO, INCONSISTENCIA, VEHICULO } from '../../../shared/presentacion';
 
 /** Mapa visual, detalle por espacio y resultado de la regla de asignación automática (D-02). */
 @Component({
@@ -22,6 +22,7 @@ export class Parqueadero {
   protected readonly reloj = inject(RelojService);
   protected readonly espacios = toSignal(inject(ParqueaderoApi).espacios());
 
+  protected readonly categoria = CATEGORIA;
   protected readonly estado = ESTADO_ESPACIO;
   protected readonly vehiculo = VEHICULO;
   protected readonly textoInconsistencia = INCONSISTENCIA;
@@ -30,7 +31,7 @@ export class Parqueadero {
   /** Conteo por estado, en el orden de la leyenda. */
   protected readonly conteo = computed(() => {
     const lista = this.espacios() ?? [];
-    const estados: EstadoEspacio[] = ['LIBRE', 'OCUPADO', 'RESERVADO', 'FUERA_DE_SERVICIO'];
+    const estados: EstadoEspacio[] = ['LIBRE', 'OCUPADO', 'FUERA_DE_SERVICIO'];
     return estados.map((e) => ({
       ...ESTADO_ESPACIO[e],
       cantidad: lista.filter((x) => x.estado === e).length,

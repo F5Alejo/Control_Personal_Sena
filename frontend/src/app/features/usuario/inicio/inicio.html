@@ -2,6 +2,12 @@
   <header class="saludo">
     <h1>Hola, {{ nombre() }}</h1>
     <p>{{ reloj.ahora() | date: "EEEE d 'de' MMMM" }}</p>
+    @if (categoria(); as c) {
+      <span class="sp-chip sp-tono--info categoria"
+        ><mat-icon>{{ c.icono }}</mat-icon
+        >{{ c.etiqueta }}</span
+      >
+    }
   </header>
 
   <!-- Vehículo activo -->

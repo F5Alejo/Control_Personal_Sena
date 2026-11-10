@@ -1,6 +1,6 @@
 export type TipoNotificacion = 'INGRESO' | 'SALIDA' | 'RECHAZO' | 'INFO';
 
-/** Notificaciones dentro de la app del aprendiz (RF-19). */
+/** Notificaciones dentro de la app "Mi parqueadero" (RF-19). */
 export interface Notificacion {
   id: number;
   fecha: string;

@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 
-/** Datos que cada ruta pendiente define en `data` (ver `admin.routes.ts` y `aprendiz.routes.ts`). */
+/** Datos que cada ruta pendiente define en `data` (ver `admin.routes.ts` y `usuario.routes.ts`). */
 export interface DatosModulo {
   titulo: string;
   descripcion: string;
