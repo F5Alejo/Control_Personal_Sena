@@ -17,8 +17,8 @@ flowchart LR
         ESP --> IND
     end
 
-    subgraph SRV["Servidor (Docker Compose)"]
-        MQ["Mosquitto<br/>broker MQTT"]
+    subgraph SRV["Servidor"]
+        MQ["Broker MQTT<br/>EMQX Cloud o Mosquitto"]
         API["Backend<br/>API REST + WebSocket"]
         DB[("PostgreSQL")]
         AG["Agente supervisor"]
@@ -59,7 +59,7 @@ sequenceDiagram
     participant K as Kiosco QR
     participant API as Backend
     participant DB as PostgreSQL
-    participant MQ as Mosquitto
+    participant MQ as Broker MQTT
     participant E as ESP32 portería
 
     E->>MQ: IR-A detecta vehículo frente a la barrera
@@ -178,16 +178,21 @@ Ejemplo de confirmación (ESP32 → backend, `senapark/acceso/barrera/estado`):
 { "id": "cmd-7f3a9c", "estado": "ABIERTA", "ts": "2026-11-10T14:03:23Z" }
 ```
 
-**Para revisar en la Fase 2:** incluir el id del dispositivo en el tópico (`senapark/porteria-01/...`) para admitir
-más de un ESP32, y la autenticación y los permisos por tópico en Mosquitto.
+**Para revisar en la Fase 2:**
+
+- Incluir el id del dispositivo en el tópico (`senapark/porteria-01/...`) para admitir más de un ESP32.
+- Usuarios y permisos por tópico en el broker (panel de EMQX o ACL de Mosquitto).
+- La librería PubSubClient de la plantilla solo publica con QoS 0: los "QoS 1" de la tabla para mensajes que envía el
+  ESP32 requieren otra librería o se compensan con confirmaciones de aplicación (D-12).
+- PubSubClient limita cada mensaje a 256 bytes por defecto; se amplía con `setBufferSize()` para los JSON.
 
 ## 8. Tecnologías por capa
 
 | Capa | Tecnología | Estado |
 |---|---|---|
-| Firmware | C++ (framework Arduino) en PlatformIO; librerías PubSubClient, ArduinoJson, ESP32Servo, LiquidCrystal_I2C, Adafruit SSD1306, MD_Parola/LedControl, DHT | Propuesta (D-10) |
+| Firmware | C++ (framework Arduino) en PlatformIO (ya creado en `main`); librerías PubSubClient, ArduinoJson, ESP32Servo, LiquidCrystal_I2C, Adafruit SSD1306, MD_Parola/LedControl, DHT | Propuesta (D-10) |
 | Simulación | Wokwi | Propuesta |
-| Broker | Eclipse Mosquitto (Docker) | Definido |
+| Broker | EMQX Cloud (plantilla del curso); Mosquitto en Docker opcional | Propuesta (D-12) |
 | Backend | Node.js + TypeScript (NestJS), cliente MQTT, WebSocket | Propuesta (D-04) |
 | Base de datos | PostgreSQL | Definido |
 | Frontend | Angular + Angular Material, Chart.js, diseño responsive | Definido |

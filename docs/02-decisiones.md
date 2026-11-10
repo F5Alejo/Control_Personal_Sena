@@ -15,7 +15,8 @@ el equipo; una vez **aceptadas**, solo se cambian agregando una nueva entrada qu
 | D-08 | Canal de notificación | Bot de Telegram para el administrador + notificaciones en la app | Propuesta |
 | D-09 | Agente | Agente supervisor (reglas) + consultas en lenguaje natural como extensión | Propuesta — depende del instructor |
 | D-10 | Herramienta de firmware | PlatformIO (VS Code) con framework Arduino; Wokwi para simular | Propuesta |
-| D-11 | Organización del código | Monorepo (firmware, backend, frontend, infraestructura y documentación) | Propuesta |
+| D-11 | Organización del código | Monorepo; mover el proyecto PlatformIO actual a `firmware/` | Propuesta |
+| D-12 | Broker MQTT | EMQX Cloud (el de la plantilla del curso); Mosquitto local opcional | Propuesta |
 
 ---
 
@@ -72,6 +73,7 @@ el equipo; una vez **aceptadas**, solo se cambian agregando una nueva entrada qu
 - **Opciones:** bot de Telegram · correo (SMTP) · Web Push (PWA).
 - **Recomendación:** **bot de Telegram** para el administrador + notificaciones dentro de la app para el aprendiz.
 - **Por qué:** gratuito, llega al celular en segundos, se implementa con una petición HTTP y es fácil de mostrar en vivo durante la presentación. Web Push requiere service worker, HTTPS y permisos del navegador; queda como mejora.
+- **Nota:** la plantilla del curso (`src/main.cpp` en `main`) publica mensajes en el tópico MQTT `notificaciones`. Es posible que el instructor considere eso como "la notificación" mínima; en ese caso Telegram es valor agregado. **⚠ Confirmar.**
 
 ### D-09 · Agente
 
@@ -90,3 +92,11 @@ el equipo; una vez **aceptadas**, solo se cambian agregando una nueva entrada qu
 
 - **Recomendación:** **monorepo** con carpetas `firmware/`, `backend/`, `frontend/`, `infra/`, `docs/`, `maqueta/` y `presentacion/`.
 - **Por qué:** un solo lugar para el entregable "Código"; los contratos (tópicos MQTT, API) se versionan junto al código que los usa.
+- **Estado actual:** el proyecto PlatformIO está en la raíz (`src/`, `include/`, `lib/`, `test/`, `ejemplos/`, `platformio.ini`). Al iniciar la Fase 1 se mueve a `firmware/`, de acuerdo con quien lo subió, antes de que existan `backend/` y `frontend/`; si no, un `src/` en la raíz se confunde con el código del backend. En VS Code se abre la carpeta `firmware/` para que PlatformIO la reconozca.
+
+### D-12 · Broker MQTT
+
+- **Opciones:** EMQX Cloud (en internet, con TLS) · Mosquitto local en Docker.
+- **Recomendación:** **EMQX Cloud** como broker principal, porque es el que usa la plantilla del curso, ya incluye TLS y lo alcanzan tanto el ESP32 (desde la red del SENA) como el backend sin abrir puertos. Mosquitto en Docker queda como opción para desarrollar sin internet.
+- **Consecuencia:** la arquitectura no cambia (MQTT es el mismo protocolo); cambian la dirección del broker y la gestión de usuarios y permisos, que se hace en el panel de EMQX.
+- **Limitación a tener en cuenta:** la librería de la plantilla, **PubSubClient**, solo *publica* con QoS 0 (sí se *suscribe* con QoS 1). En la Fase 2 se decide entre mantenerla y compensar con confirmaciones de aplicación (*ack*), o cambiar a una librería con QoS 1 al publicar (p. ej. espMqttClient).

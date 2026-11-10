@@ -32,7 +32,8 @@ módulos → implementación → prueba**. No se avanza a la siguiente fase sin 
 
 Cada componente se prueba **solo** antes de integrarlo (se puede simular primero en Wokwi).
 
-1. Entorno: PlatformIO, programa de prueba y conexión Wi-Fi.
+1. Entorno: mover el proyecto PlatformIO de `main` a `firmware/`, credenciales en `include/secrets.h` (fuera de Git),
+   puerto de carga que funcione en Windows y Linux, programa de prueba y conexión Wi-Fi.
 2. Servo: abrir y cerrar la barrera con movimiento suave.
 3. IR-A e IR-B: detección y dirección del paso (máquina de estados).
 4. HC-SR04 y sensores de los espacios: umbrales de ocupación con filtro anti-rebote.
@@ -47,7 +48,7 @@ el diagrama eléctrico y los planos.
 
 ## Fase 2 · Comunicación MQTT
 
-1. Mosquitto en Docker con usuario/contraseña y permisos por tópico.
+1. Broker (EMQX Cloud o Mosquitto, D-12) con usuario/contraseña y permisos por tópico.
 2. Contrato de tópicos y mensajes definitivo (`docs/mqtt.md`).
 3. ESP32 publica sensores y estados; se suscribe a comandos.
 4. Last Will, heartbeat, *ack* de comandos e idempotencia.

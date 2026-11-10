@@ -17,7 +17,7 @@ administra desde una **plataforma web responsive** en tiempo real.
 | 1 microcontrolador | ESP32 |
 | 2 actuadores | Servo SG90 (barrera) · Relé (baliza "PARQUEADERO LLENO") |
 | 3 sensores | IR LM393 + IR TCRT5000 (paso y dirección en la barrera) · HC-SR04 (ocupación) · *extra:* PIR, DHT11 |
-| MQTT | Eclipse Mosquitto |
+| MQTT | EMQX Cloud (plantilla del curso) o Mosquitto local |
 | Web / aplicación | Angular responsive: panel administrativo + app del aprendiz + kiosco QR |
 | 1 notificación | Bot de Telegram para el administrador + notificaciones en la app |
 | ★ Agente | Agente supervisor de inconsistencias (propuesta) |
@@ -38,13 +38,15 @@ Detalle en [`docs/00-requisitos-del-curso.md`](docs/00-requisitos-del-curso.md).
 
 ## Estructura del repositorio
 
-Las carpetas se crean al iniciar la fase correspondiente:
+Las carpetas se crean al iniciar la fase correspondiente. Hoy el proyecto PlatformIO del ESP32 está en la raíz
+(`src/`, `include/`, `lib/`, `test/`, `ejemplos/`, `platformio.ini`); en la Fase 1 se mueve a `firmware/` (D-11).
+
 
 ```text
 docs/          Documentación (Fase 0 en adelante)
 firmware/      ESP32 · C++ con framework Arduino (PlatformIO)       → Fase 1
 maqueta/       Diagrama eléctrico y planos de la maqueta             → Fase 1
-infra/         Mosquitto, PostgreSQL y Docker Compose                → Fase 2
+infra/         PostgreSQL, Docker Compose (y Mosquitto si se usa local) → Fase 2
 backend/       API REST, puente MQTT y WebSocket                     → Fase 3
 frontend/      Angular: panel administrativo, app del aprendiz, kiosco → Fase 4
 presentacion/  Diapositivas y video de la demo                       → Fase 5

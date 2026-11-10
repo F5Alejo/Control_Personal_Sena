@@ -3,6 +3,28 @@
 > Rol de cada componente, viabilidad eléctrica y lo que falta confirmar. El diagrama eléctrico definitivo y los
 > planos con medidas se hacen en la **Fase 1** (`maqueta/`).
 
+## 0. Lo que ya confirma el código de `main`
+
+El proyecto PlatformIO que ya está en `main` (`src/main.cpp`, `ejemplos/`, `platformio.ini`) confirma:
+
+| Dato | Valor | Fuente |
+|---|---|---|
+| Placa | `esp32dev` (ESP32 DevKit) | `platformio.ini` |
+| LCD | **16x2 con módulo I2C**, dirección `0x27` | `src/main.cpp` |
+| OLED | SSD1306 128x64, dirección `0x3C` | `ejemplos/oled_fi.cpp` |
+| Bus I2C | SDA 21, SCL 22 | todos los ejemplos |
+| Servo | GPIO 13 con `ESP32Servo` | `ejemplos/joystick_servo_lcd.cpp` |
+| HC-SR04 | TRIG 5, ECHO 18 (con divisor) | `src/main.cpp` |
+| Broker MQTT | **EMQX Cloud** con TLS (puerto 8883) y librería PubSubClient | `src/main.cpp` |
+| Otros componentes en ejemplos | Joystick, sensor de humedad de suelo FC-28/YL-69 | `ejemplos/` (no se necesitan en el MVP) |
+
+Para corregir al iniciar la Fase 1:
+
+- **Credenciales:** `src/main.cpp` tiene los campos de Wi-Fi y de EMQX. Si alguien los llena y hace *push*, las contraseñas quedan públicas. Se moverán a `include/secrets.h` (ya está en `.gitignore`) con una plantilla `secrets.example.h`.
+- **Puerto de carga:** `upload_port = /dev/ttyUSB*` solo funciona en Linux; en Windows falla. Se quitará para que PlatformIO detecte el puerto solo (o cada quien usa su `COMx` localmente).
+- `ejemplos/pir_lcd.cpp` contiene por error el texto de un `platformio.ini`; falta el ejemplo real del PIR.
+- `marcoschwartz/LiquidCrystal_I2C` aparece dos veces en `lib_deps`.
+
 ## 1. Inventario y rol de cada componente
 
 | Componente | Cant. | Rol en el prototipo | Zona | Clasificación |
@@ -16,8 +38,8 @@
 | Sensor PIR HC-SR501 | 2 | Persona frente al kiosco (activa la LCD) · vigilancia fuera de horario | C | Sensor |
 | Sensor DHT11 | 1 | Temperatura y humedad para el dashboard | C | Sensor |
 | Módulo táctil TTP223B | 1 | Botón del vigilante: toque corto = apertura manual registrada; 3 s = modo mantenimiento | D | Entrada de control |
-| Pantalla LCD | ⚠ ? | Instrucciones y disponibilidad ("Libres: 2/4", "Escanee el QR") | C | Indicador |
-| OLED 0.96" 128x64 I2C | 1 | Estado técnico: Wi-Fi, MQTT, último comando, alertas | C | Indicador |
+| Pantalla LCD 16x2 I2C (0x27) | ⚠ ? | Instrucciones y disponibilidad ("Libres: 2/4", "Escanee el QR") | C | Indicador |
+| OLED 0.96" 128x64 I2C (0x3C) | 1 | Estado técnico: Wi-Fi, MQTT, último comando, alertas | C | Indicador |
 | Matriz LED 8x8 1088AS | ⚠ ? | Símbolos: ✓ autorizado, ✗ denegado, ⧗ espera, flecha | A | Indicador |
 | LEDs | varios | Ocupación de cada espacio (encendido = ocupado) | B | Indicador |
 | Protoboard mini | 2 | Montaje | — | — |
@@ -61,32 +83,33 @@ de **baja tensión** (LEDs o bombillo de 5–12 V): **nada de 110 V en la maquet
 
 ## 4. Presupuesto de pines (preliminar)
 
-ESP32 DevKit V1 (módulo WROOM-32). Se evitan los pines de arranque (0, 12), los de la memoria flash (6–11) y los del
-puerto serie (1, 3). Los pines 34, 35, 36 y 39 son **solo de entrada** y se usan para sensores.
+ESP32 DevKit (`esp32dev`, módulo WROOM-32). Se evitan los pines de arranque (0, 12), los de la memoria flash (6–11) y
+los del puerto serie (1, 3). Los pines 34, 35, 36 y 39 son **solo de entrada** y se usan para sensores. Se respetan
+los pines que ya usa el código de `main` (I2C 21/22, servo 13, HC-SR04 5/18).
 
 | Señal | Pines | GPIO propuesto | Nota |
 |---|---:|---|---|
-| I2C (OLED + LCD) | 2 | 21 (SDA), 22 (SCL) | Bus compartido: OLED 0x3C, LCD 0x27 o 0x3F |
-| Servo | 1 | 13 | PWM |
+| I2C (OLED + LCD) | 2 | 21 (SDA), 22 (SCL) | Bus compartido: OLED 0x3C, LCD 0x27 ✅ |
+| Servo | 1 | 13 ✅ | PWM |
+| HC-SR04 (TRIG, ECHO) | 2 | 5, 18 ✅ | ECHO con divisor |
 | Relé | 1 | 27 | — |
-| Matriz con MAX7219 (DIN, CLK, CS) | 3 | 23, 18, 5 | Solo si la matriz viene en módulo MAX7219 |
+| Matriz con MAX7219 (DIN, CLK, CS) | 3 | 23, 19, 15 | Solo si la matriz viene en módulo MAX7219 |
 | IR-A (FC-51) | 1 | 34 | Solo entrada |
 | IR-B (TCRT5000, salida D0) | 1 | 35 | Solo entrada |
-| HC-SR04 (TRIG, ECHO) | 2 | 25, 26 | ECHO con divisor |
 | PIR | 1 | 36 | Solo entrada |
 | DHT11 | 1 | 4 | — |
 | TTP223B | 1 | 39 | Solo entrada |
-| Sensores P02–P04 | 3 | 32, 33, 19 | — |
-| LEDs P01–P04 | 4 | 16, 17, 14, 2 | 16/17 no están libres si el módulo es WROVER |
-| **Total** | **21** | | Quedan libres: 15 |
+| Sensores P02–P04 | 3 | 32, 33, 14 | — |
+| LEDs P01–P04 | 4 | 25, 26, 16, 17 | 25/26 son los de los ejemplos; 16/17 no están libres si el módulo es WROVER |
+| **Total** | **21** | | Queda libre: 2 |
 
-**Conclusión:** todo cabe en **un solo ESP32**, pero justo, y **solo si**:
+✅ = ya usado así en el código de `main`.
 
-1. la LCD tiene módulo I2C (si es paralela usa 6 pines más), y
-2. la matriz 1088AS viene montada en un módulo MAX7219 (sola necesitaría 16 pines).
+**Conclusión:** todo cabe en **un solo ESP32**, pero justo. La LCD ya está confirmada como I2C; falta confirmar que
+la matriz 1088AS viene montada en un módulo MAX7219 (sola necesitaría 16 pines).
 
-Si alguna de las dos no se cumple, las opciones son: prescindir de la matriz, quitar los LEDs por espacio (el estado
-se ve en la LCD y en la web) o usar un **segundo ESP32** para los espacios (si el instructor lo permite).
+Si no lo está, las opciones son: prescindir de la matriz, quitar los LEDs por espacio (el estado se ve en la LCD y en
+la web) o usar un **segundo ESP32** para los espacios (si el instructor lo permite).
 
 ## 5. Distribución en la maqueta (borrador)
 
@@ -126,9 +149,9 @@ se ve en la LCD y en la web) o usar un **segundo ESP32** para los espacios (si e
 ## 7. Pendiente por confirmar
 
 - [ ] Cantidad exacta de: ESP32, SG90, FC-51 (LM393), TCRT5000, LEDs.
-- [ ] ¿La LCD es 16x2 o 20x4? ¿Trae módulo I2C (4 pines: GND, VCC, SDA, SCL)?
+- [x] LCD: 16x2 con módulo I2C en 0x27 (confirmado en `src/main.cpp`).
 - [ ] ¿La matriz 1088AS viene en módulo MAX7219 (5 pines: VCC, GND, DIN, CS, CLK)?
 - [ ] ¿El relé es un módulo (con transistor, LED y bornera) o el relé suelto?
-- [ ] ¿El ESP32 es DevKit V1 de 30 o 38 pines? ¿Módulo WROOM o WROVER?
+- [ ] ESP32: placa `esp32dev` confirmada; ¿de 30 o 38 pines? ¿módulo WROOM o WROVER?
 - [ ] ¿Tienen fuente de 5 V externa o un cargador que se pueda reutilizar?
 - [ ] ¿Qué equipo servirá de kiosco para el QR (portátil, tablet o celular)?

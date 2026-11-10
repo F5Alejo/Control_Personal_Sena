@@ -21,9 +21,9 @@ En el centro del tablero aparece el **dibujo de una barrera vehicular** junto a 
 | Microcontrolador ("1 MC") | 1 | **ESP32** | ✅ |
 | Actuadores | 2 | **A1:** servo SG90 (barrera) · **A2:** relé JQC-3FF-S-Z (baliza / letrero "PARQUEADERO LLENO" de baja tensión) | ✅ (+ matriz LED, LEDs y pantallas como indicadores) |
 | Sensores | 3 | **S1:** IR LM393 (vehículo frente a la barrera) · **S2:** IR TCRT5000 (vehículo cruzó la barrera) · **S3:** HC-SR04 (ocupación de espacio) | ✅ (+ PIR HC-SR501, DHT11, táctil TTP223B) |
-| MQTT | — | Broker **Eclipse Mosquitto**; ESP32 ⇄ backend | ✅ |
+| MQTT | — | Broker **EMQX Cloud**, como en la plantilla del curso (Mosquitto local opcional, D-12); ESP32 ⇄ backend | ✅ |
 | Web / aplicación | — | Plataforma web **responsive**: panel administrativo + app del aprendiz + kiosco QR | ✅ |
-| Notificación | 1 | **Bot de Telegram** al administrador (accesos rechazados, inconsistencias, dispositivo caído) + notificaciones dentro de la app | ✅ (propuesta, ver D-08) |
+| Notificación | 1 | **Bot de Telegram** al administrador (accesos rechazados, inconsistencias, dispositivo caído) + notificaciones dentro de la app. La plantilla del curso ya publica en el tópico MQTT `notificaciones` | ✅ (propuesta, ver D-08) |
 | ★ Agente | extra | **Agente supervisor**: compara estado físico vs. digital, detecta anomalías, notifica y responde consultas | ⭐ valor agregado (ver D-09) |
 
 Detalle de cada componente en [`04-hardware.md`](04-hardware.md).
