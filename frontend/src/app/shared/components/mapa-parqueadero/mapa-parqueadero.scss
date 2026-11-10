@@ -1,0 +1,167 @@
+.mapa {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mapa__espacios {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.espacio {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 150px;
+  padding: 14px 12px 12px;
+  border-radius: var(--sp-radio-sm);
+  background: var(--sp-superficie-2);
+  border: 1px solid var(--sp-borde);
+  // Franja superior con el color del estado (el texto del chip dice el estado).
+  box-shadow: inset 0 4px 0 var(--chip-color);
+  overflow: hidden;
+}
+
+.espacio--problema {
+  border-color: var(--sp-alerta);
+  box-shadow:
+    inset 0 4px 0 var(--chip-color),
+    0 0 0 1px var(--sp-alerta);
+}
+
+.espacio__cabecera {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.espacio__codigo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.espacio__tipo {
+  color: var(--sp-texto-3);
+}
+
+.espacio__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.espacio__dato {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--sp-texto-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.espacio__dato--suave {
+  color: var(--sp-texto-3);
+}
+
+.espacio__sensor {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--sp-texto-3);
+
+  .mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+}
+
+.espacio__problema {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--sp-alerta-fondo);
+  font-size: 0.75rem;
+  color: var(--sp-texto);
+
+  .mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    color: var(--sp-alerta);
+    flex: none;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: var(--sp-texto-2);
+  }
+}
+
+.mapa__via {
+  position: relative;
+  height: 34px;
+  border-radius: 6px;
+  background: #e6e9e4;
+  display: grid;
+  place-items: center;
+
+  // Línea discontinua del carril.
+  &::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 50%;
+    border-top: 2px dashed #ffffff;
+  }
+
+  span {
+    position: relative;
+    padding: 0 10px;
+    background: #e6e9e4;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sp-texto-3);
+  }
+}
+
+.mapa__porteria {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px dashed var(--sp-texto-3);
+  font-size: 0.75rem;
+  color: var(--sp-texto-2);
+
+  .mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+}
+
+.mapa--detallado .espacio {
+  min-height: 220px;
+}

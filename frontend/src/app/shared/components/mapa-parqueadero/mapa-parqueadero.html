@@ -1,0 +1,70 @@
+<div class="mapa" [class.mapa--detallado]="detallado()">
+  <div class="mapa__espacios">
+    @for (e of espacios(); track e.codigo) {
+      @let info = estado[e.estado];
+      @let problema = inconsistencia(e);
+      <article
+        class="espacio"
+        [class]="'sp-tono--' + info.tono"
+        [class.espacio--problema]="problema"
+        [attr.aria-label]="'Espacio ' + e.codigo + ', ' + info.etiqueta"
+      >
+        <header class="espacio__cabecera">
+          <span class="espacio__codigo">{{ e.codigo }}</span>
+          <mat-icon class="espacio__tipo" [matTooltip]="vehiculo[e.tipo].etiqueta">
+            {{ vehiculo[e.tipo].icono }}
+          </mat-icon>
+        </header>
+
+        <span class="sp-chip">
+          <mat-icon class="sp-icono-relleno">{{ info.icono }}</mat-icon
+          >{{ info.etiqueta }}
+        </span>
+
+        <div class="espacio__cuerpo">
+          @if (e.ocupacion) {
+            <app-placa [placa]="e.ocupacion.placa" />
+            @if (detallado()) {
+              <p class="espacio__dato">{{ e.ocupacion.aprendiz }}</p>
+              <p class="espacio__dato espacio__dato--suave">
+                {{ e.estado === 'OCUPADO' ? 'Ingresó' : 'Autorizado' }}
+                {{ e.ocupacion.desde | date: 'shortTime' }} ·
+                {{ e.ocupacion.desde | duracion: reloj.ahora() }}
+              </p>
+            }
+          } @else {
+            <p class="espacio__dato espacio__dato--suave">Sin vehículo asignado</p>
+          }
+        </div>
+
+        <footer class="espacio__sensor" [matTooltip]="'Lectura del sensor ' + e.lectura.sensor">
+          <mat-icon>sensors</mat-icon>
+          <span>
+            {{ e.lectura.sensor }}: {{ e.lectura.detectaVehiculo ? 'detecta vehículo' : 'libre' }}
+            @if (e.lectura.distanciaCm !== undefined) {
+              ({{ e.lectura.distanciaCm | number: '1.1-1' }} cm)
+            }
+          </span>
+        </footer>
+
+        @if (problema) {
+          <div class="espacio__problema" role="status">
+            <mat-icon class="sp-icono-relleno">warning</mat-icon>
+            <div>
+              <strong>{{ textoInconsistencia[problema].etiqueta }}</strong>
+              @if (detallado()) {
+                <p>{{ textoInconsistencia[problema].detalle }}</p>
+              }
+            </div>
+          </div>
+        }
+      </article>
+    }
+  </div>
+
+  <div class="mapa__via" aria-hidden="true"><span>Vía interna</span></div>
+  <div class="mapa__porteria">
+    <mat-icon>fence</mat-icon>
+    <span>Portería · entrada y salida</span>
+  </div>
+</div>

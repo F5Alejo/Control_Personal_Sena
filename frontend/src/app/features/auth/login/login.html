@@ -1,0 +1,101 @@
+<div class="login">
+  <section class="marca" aria-label="SENA SMART PARK">
+    <div class="marca__logo" aria-hidden="true"><mat-icon>local_parking</mat-icon></div>
+    <h1>SENA SMART PARK</h1>
+    <p class="marca__lema">
+      Sistema inteligente de gestión y control de parqueaderos institucionales
+    </p>
+    <ul class="marca__puntos">
+      <li><mat-icon>qr_code_2</mat-icon>Acceso con QR dinámico de un solo uso</li>
+      <li><mat-icon>sensors</mat-icon>Ocupación verificada por sensores en tiempo real</li>
+      <li>
+        <mat-icon>notifications_active</mat-icon>Alertas ante inconsistencias y accesos no
+        autorizados
+      </li>
+    </ul>
+  </section>
+
+  <section class="acceso">
+    <div class="acceso__tarjeta">
+      <h2>Iniciar sesión</h2>
+      <p class="acceso__ayuda">Ingresa con tu número de documento.</p>
+
+      <form [formGroup]="formulario" (ngSubmit)="ingresar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Documento</mat-label>
+          <mat-icon matPrefix>badge</mat-icon>
+          <input
+            matInput
+            formControlName="documento"
+            inputmode="numeric"
+            autocomplete="username"
+            maxlength="12"
+          />
+          @if (formulario.controls.documento.hasError('required')) {
+            <mat-error>Escribe tu número de documento.</mat-error>
+          } @else if (formulario.controls.documento.hasError('pattern')) {
+            <mat-error>Solo números, entre 6 y 12 dígitos.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña</mat-label>
+          <mat-icon matPrefix>lock</mat-icon>
+          <input
+            matInput
+            formControlName="contrasena"
+            [type]="verContrasena() ? 'text' : 'password'"
+            autocomplete="current-password"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="verContrasena.set(!verContrasena())"
+            [attr.aria-label]="verContrasena() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <mat-icon>{{ verContrasena() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (formulario.controls.contrasena.hasError('required')) {
+            <mat-error>Escribe tu contraseña.</mat-error>
+          }
+        </mat-form-field>
+
+        @if (error()) {
+          <p class="acceso__error" role="alert"><mat-icon>error</mat-icon>{{ error() }}</p>
+        }
+
+        <button mat-flat-button type="submit" class="acceso__boton" [disabled]="enviando()">
+          @if (enviando()) {
+            <mat-spinner diameter="20" />
+            Ingresando…
+          } @else {
+            Ingresar
+          }
+        </button>
+        <button mat-button type="button" class="acceso__olvido" (click)="recuperarContrasena()">
+          ¿Olvidaste tu contraseña?
+        </button>
+      </form>
+
+      <div class="demo">
+        <p class="demo__titulo"><mat-icon>science</mat-icon>Modo demostración · datos ficticios</p>
+        <div class="demo__opciones">
+          @for (d of demos; track d.documento) {
+            <button
+              type="button"
+              class="demo__opcion"
+              (click)="usarDemo(d.documento, d.contrasena)"
+            >
+              <mat-icon>{{ d.icono }}</mat-icon>
+              <span>
+                <strong>{{ d.rol }}</strong>
+                <small>{{ d.documento }} · {{ d.contrasena }}</small>
+              </span>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

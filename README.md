@@ -7,8 +7,9 @@ el aprendiz escanea un **QR dinámico** con su celular, el backend valida su ide
 levanta la barrera, detecta el paso y monitorea la ocupación de cada espacio. Todo se comunica por **MQTT** y se
 administra desde una **plataforma web responsive** en tiempo real.
 
-> **Estado actual: Fase 0 — Definición.** Todavía no hay código; se están cerrando requisitos, decisiones e
-> inventario de hardware. Ver la [hoja de ruta](docs/ROADMAP.md).
+> **Estado actual:** Fase 0 (definición) en cierre y **plataforma web 4.1** lista con datos simulados:
+> inicio de sesión, Dashboard, Parqueadero e inicio del aprendiz. Ver la [hoja de ruta](docs/ROADMAP.md)
+> y cómo ejecutar la web en [`frontend/README.md`](frontend/README.md).
 
 ## Requisitos del curso → cumplimiento
 
@@ -34,6 +35,7 @@ Detalle en [`docs/00-requisitos-del-curso.md`](docs/00-requisitos-del-curso.md).
 | [02 · Decisiones](docs/02-decisiones.md) | Decisiones técnicas con opciones y recomendación |
 | [03 · Arquitectura](docs/03-arquitectura.md) | Componentes, flujos, estados, inconsistencias y tópicos MQTT |
 | [04 · Hardware](docs/04-hardware.md) | Rol de cada componente, alimentación, pines y maqueta |
+| [05 · Plataforma web](docs/05-plataforma-web.md) | Objetivo, rutas, contrato de datos, diseño e incrementos de la web |
 | [Hoja de ruta](docs/ROADMAP.md) | Fases, pasos y criterios de "terminado" |
 
 ## Estructura del repositorio
@@ -48,7 +50,7 @@ firmware/      ESP32 · C++ con framework Arduino (PlatformIO)       → Fase 1
 maqueta/       Diagrama eléctrico y planos de la maqueta             → Fase 1
 infra/         PostgreSQL, Docker Compose (y Mosquitto si se usa local) → Fase 2
 backend/       API REST, puente MQTT y WebSocket                     → Fase 3
-frontend/      Angular: panel administrativo, app del aprendiz, kiosco → Fase 4
+frontend/      Angular: panel administrativo, app del aprendiz, kiosco → Fase 4 (ya iniciada)
 presentacion/  Diapositivas y video de la demo                       → Fase 5
 ```
 

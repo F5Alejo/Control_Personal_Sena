@@ -17,6 +17,8 @@ el equipo; una vez **aceptadas**, solo se cambian agregando una nueva entrada qu
 | D-10 | Herramienta de firmware | PlatformIO (VS Code) con framework Arduino; Wokwi para simular | Propuesta |
 | D-11 | Organización del código | Monorepo; mover el proyecto PlatformIO actual a `firmware/` | Propuesta |
 | D-12 | Broker MQTT | EMQX Cloud (el de la plantilla del curso); Mosquitto local opcional | Propuesta |
+| D-13 | Orden del frontend | Construir la web primero con datos simulados, detrás de un contrato de API | Aceptada |
+| D-14 | Versión de Angular | Angular 21 (LTS) con Angular Material | Aceptada |
 
 ---
 
@@ -100,3 +102,19 @@ el equipo; una vez **aceptadas**, solo se cambian agregando una nueva entrada qu
 - **Recomendación:** **EMQX Cloud** como broker principal, porque es el que usa la plantilla del curso, ya incluye TLS y lo alcanzan tanto el ESP32 (desde la red del SENA) como el backend sin abrir puertos. Mosquitto en Docker queda como opción para desarrollar sin internet.
 - **Consecuencia:** la arquitectura no cambia (MQTT es el mismo protocolo); cambian la dirección del broker y la gestión de usuarios y permisos, que se hace en el panel de EMQX.
 - **Limitación a tener en cuenta:** la librería de la plantilla, **PubSubClient**, solo *publica* con QoS 0 (sí se *suscribe* con QoS 1). En la Fase 2 se decide entre mantenerla y compensar con confirmaciones de aplicación (*ack*), o cambiar a una librería con QoS 1 al publicar (p. ej. espMqttClient).
+
+### D-13 · Orden del frontend
+
+- **Decisión:** adelantar la plataforma web (Fase 4) con **datos simulados**, antes del backend.
+- **Por qué:** el equipo puede avanzar en paralelo (hardware, backend y web), las pantallas se validan pronto con el
+  instructor y los modelos de la web definen el contrato que el backend debe cumplir.
+- **Cómo se evita rehacer trabajo:** las pantallas solo usan los contratos `ParqueaderoApi` y `AuthApi`; conectar el
+  backend es cambiar un proveedor (ver `05-plataforma-web.md`).
+
+### D-14 · Versión de Angular
+
+- **Decisión:** **Angular 21** (versión con soporte extendido, LTS) con Angular Material y Chart.js.
+- **Por qué:** Angular 22 exige Node 22.22.3 o superior; Angular 21 funciona con Node 20.19+, 22.12+ y 24, lo que
+  evita problemas en los equipos del SENA. Tiene soporte de seguridad durante todo el proyecto.
+- **Nota:** se versiona `package-lock.json` y se instala con `npm ci`, porque npm 10 falla al resolver las
+  dependencias de pruebas desde cero.

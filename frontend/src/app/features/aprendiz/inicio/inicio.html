@@ -1,0 +1,99 @@
+<section class="inicio">
+  <header class="saludo">
+    <h1>Hola, {{ nombre() }}</h1>
+    <p>{{ reloj.ahora() | date: "EEEE d 'de' MMMM" }}</p>
+  </header>
+
+  <!-- Vehículo activo -->
+  <article class="sp-tarjeta activo">
+    @if (acceso() === undefined) {
+      <p class="sp-cargando">Consultando tu acceso…</p>
+    } @else if (acceso(); as a) {
+      <p class="activo__estado"><span class="sp-punto"></span>Tu vehículo está dentro</p>
+      <div class="activo__vehiculo">
+        <app-placa [placa]="a.placa" tamano="grande" />
+        <mat-icon>{{ vehiculo[a.tipoVehiculo].icono }}</mat-icon>
+      </div>
+      <dl class="activo__datos">
+        <div>
+          <dt>Espacio</dt>
+          <dd class="activo__espacio">{{ a.espacio }}</dd>
+        </div>
+        <div>
+          <dt>Ingreso</dt>
+          <dd>{{ a.ingreso | date: 'shortTime' }}</dd>
+        </div>
+        <div>
+          <dt>Permanencia</dt>
+          <dd>{{ a.ingreso | duracion: reloj.ahora() }}</dd>
+        </div>
+      </dl>
+      <a mat-flat-button routerLink="/app/acceso" class="activo__accion">
+        <mat-icon>qr_code_scanner</mat-icon>Registrar salida
+      </a>
+    } @else {
+      <p class="activo__estado activo__estado--fuera">No tienes vehículos dentro</p>
+      <p class="activo__ayuda">Al llegar, escanea el QR de la pantalla de la portería.</p>
+      <a mat-flat-button routerLink="/app/acceso" class="activo__accion">
+        <mat-icon>qr_code_scanner</mat-icon>Ingresar con QR
+      </a>
+    }
+  </article>
+
+  <!-- Disponibilidad -->
+  <article class="sp-tarjeta">
+    <div class="sp-tarjeta__cabecera">
+      <div>
+        <h2>Disponibilidad ahora</h2>
+        <p>Espacios libres confirmados por sensores.</p>
+      </div>
+    </div>
+    @if (disponibilidad(); as lista) {
+      <ul class="disponibilidad">
+        @for (d of lista; track d.tipo) {
+          <li>
+            <mat-icon>{{ d.icono }}</mat-icon>
+            <span class="disponibilidad__tipo">{{ d.etiqueta }}s</span>
+            <span class="disponibilidad__puntos" aria-hidden="true">
+              @for (p of d.puntos; track p.codigo) {
+                <span class="punto" [class.punto--libre]="p.libre"></span>
+              }
+            </span>
+            <strong>{{ d.libres }} de {{ d.total }} libres</strong>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="sp-cargando">Consultando disponibilidad…</p>
+    }
+  </article>
+
+  <!-- Notificaciones -->
+  <article class="sp-tarjeta">
+    <div class="sp-tarjeta__cabecera">
+      <div>
+        <h2>Notificaciones</h2>
+      </div>
+    </div>
+    @if (notificaciones(); as lista) {
+      <ul class="notificaciones">
+        @for (n of lista; track n.id) {
+          <li [class.no-leida]="!n.leida">
+            <span class="notificaciones__icono"
+              ><mat-icon>{{ iconoNotificacion[n.tipo] }}</mat-icon></span
+            >
+            <div>
+              <p class="notificaciones__titulo">{{ n.titulo }}</p>
+              <p class="notificaciones__detalle">{{ n.detalle }}</p>
+            </div>
+            <small>{{ n.fecha | hace: reloj.ahora() }}</small>
+          </li>
+        } @empty {
+          <li class="sp-vacio">No tienes notificaciones.</li>
+        }
+      </ul>
+    } @else {
+      <p class="sp-cargando">Cargando notificaciones…</p>
+    }
+  </article>
+</section>

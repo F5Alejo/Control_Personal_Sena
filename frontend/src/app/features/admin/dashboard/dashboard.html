@@ -1,0 +1,247 @@
+<section class="sp-pagina">
+  <header class="sp-encabezado">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Estado general del parqueadero en tiempo real.</p>
+    </div>
+    <a mat-stroked-button routerLink="/admin/parqueadero">
+      <mat-icon>local_parking</mat-icon>Ver parqueadero
+    </a>
+  </header>
+
+  <!-- Indicadores -->
+  <div class="indicadores">
+    @let r = resumen();
+    <app-indicador
+      etiqueta="Capacidad total"
+      icono="garage"
+      tono="fuera"
+      [valor]="r?.capacidad"
+      [detalle]="composicion()"
+    />
+    <app-indicador
+      etiqueta="Disponibles"
+      icono="check_circle"
+      tono="libre"
+      [valor]="r?.disponibles"
+      [detalle]="r ? contar(r.reservados, 'reservado', 'reservados') : undefined"
+    />
+    <app-indicador
+      etiqueta="Ocupados"
+      icono="do_not_disturb_on"
+      tono="ocupado"
+      [valor]="r?.ocupados"
+      detalle="Con acceso registrado"
+    />
+    <app-indicador
+      etiqueta="Vehículos dentro"
+      icono="sensors"
+      tono="alerta"
+      [valor]="r?.vehiculosDetectados"
+      [detalle]="r?.inconsistencias ? r?.inconsistencias + ' sin registro' : 'Según los sensores'"
+      [iconoDetalle]="r?.inconsistencias ? 'warning' : undefined"
+    />
+    <app-indicador
+      etiqueta="Ingresos hoy"
+      icono="login"
+      tono="info"
+      [valor]="r?.ingresosHoy"
+      [detalle]="r ? contar(r.rechazosHoy, 'rechazado', 'rechazados') : undefined"
+    />
+    <app-indicador etiqueta="Salidas hoy" icono="logout" tono="info" [valor]="r?.salidasHoy" />
+  </div>
+
+  <div class="cuadricula">
+    <!-- Mapa -->
+    <article class="sp-tarjeta col-8">
+      <div class="sp-tarjeta__cabecera">
+        <div>
+          <h2>Mapa del parqueadero</h2>
+          <p>Estado registrado y lectura del sensor de cada espacio.</p>
+        </div>
+        <div class="leyenda">
+          <span class="sp-chip sp-tono--libre"><span class="sp-punto"></span>Libre</span>
+          <span class="sp-chip sp-tono--ocupado"><span class="sp-punto"></span>Ocupado</span>
+          <span class="sp-chip sp-tono--reservado"><span class="sp-punto"></span>Reservado</span>
+        </div>
+      </div>
+      @if (espacios(); as lista) {
+        <app-mapa-parqueadero [espacios]="lista" />
+      } @else {
+        <p class="sp-cargando">Cargando espacios…</p>
+      }
+    </article>
+
+    <!-- Estado del sistema -->
+    <article class="sp-tarjeta col-4 sistema">
+      <div class="sp-tarjeta__cabecera">
+        <div>
+          <h2>Estado del sistema</h2>
+          <p>ESP32, MQTT y condiciones ambientales.</p>
+        </div>
+      </div>
+      @if (porteria(); as d) {
+        <div class="sistema__dispositivo">
+          <span class="sp-chip" [class]="d.online ? 'sp-tono--libre' : 'sp-tono--ocupado'">
+            <mat-icon class="sp-icono-relleno">{{ d.online ? 'wifi' : 'wifi_off' }}</mat-icon>
+            {{ d.online ? 'En línea' : 'Desconectado' }}
+          </span>
+          <strong>{{ d.nombre }}</strong>
+        </div>
+        <dl class="sistema__datos">
+          <div>
+            <dt>Broker</dt>
+            <dd>{{ d.broker }}</dd>
+          </div>
+          <div>
+            <dt>Último heartbeat</dt>
+            <dd>{{ d.ultimoHeartbeat | hace: reloj.ahora() }}</dd>
+          </div>
+          <div>
+            <dt>Barrera</dt>
+            <dd>{{ d.barrera === 'CERRADA' ? 'Cerrada' : 'Abierta' }}</dd>
+          </div>
+          <div>
+            <dt>Señal Wi-Fi</dt>
+            <dd>{{ d.rssiDbm }} dBm</dd>
+          </div>
+          <div>
+            <dt>Componentes</dt>
+            <dd>
+              {{ componentes().sensores.ok }}/{{ componentes().sensores.total }} sensores ·
+              {{ componentes().actuadores.ok }}/{{ componentes().actuadores.total }} actuadores
+            </dd>
+          </div>
+        </dl>
+      } @else {
+        <p class="sp-cargando">Consultando dispositivo…</p>
+      }
+
+      <div class="ambiente">
+        <div class="ambiente__dato">
+          <mat-icon>device_thermostat</mat-icon>
+          <span>
+            <strong>{{ ambiente()?.temperaturaC | number: '1.1-1' }} °C</strong>
+            <small>Temperatura</small>
+          </span>
+        </div>
+        <div class="ambiente__dato">
+          <mat-icon>humidity_percentage</mat-icon>
+          <span>
+            <strong>{{ ambiente()?.humedadRelativa ?? '—' }} %</strong>
+            <small>Humedad</small>
+          </span>
+        </div>
+        <small class="ambiente__fuente">DHT11 en la portería</small>
+      </div>
+    </article>
+
+    <!-- Gráfico -->
+    <article class="sp-tarjeta col-8">
+      <div class="sp-tarjeta__cabecera">
+        <div>
+          <h2>Ocupación promedio por hora</h2>
+          <p>Últimos 7 días, en porcentaje de la capacidad.</p>
+        </div>
+      </div>
+      @if (ocupacion(); as datos) {
+        <app-grafico-ocupacion [datos]="datos" [capacidad]="resumen()?.capacidad ?? 4" />
+      } @else {
+        <p class="sp-cargando">Cargando estadísticas…</p>
+      }
+    </article>
+
+    <!-- Alertas -->
+    <article class="sp-tarjeta col-4">
+      <div class="sp-tarjeta__cabecera">
+        <div>
+          <h2>Alertas activas</h2>
+          <p>Requieren revisión del administrador.</p>
+        </div>
+        <a mat-button routerLink="/admin/alertas">Ver todas</a>
+      </div>
+      @if (alertas(); as lista) {
+        <ul class="alertas">
+          @for (a of lista; track a.id) {
+            @let s = severidad[a.severidad];
+            <li class="alerta" [class]="'sp-tono--' + s.tono">
+              <mat-icon class="sp-icono-relleno alerta__icono">{{ s.icono }}</mat-icon>
+              <div>
+                <p class="alerta__titulo">{{ a.titulo }}</p>
+                <p class="alerta__detalle">{{ a.detalle }}</p>
+                <p class="alerta__meta">
+                  Severidad {{ s.etiqueta | lowercase }} · {{ a.fecha | hace: reloj.ahora() }}
+                </p>
+              </div>
+            </li>
+          } @empty {
+            <li class="sp-vacio">Sin alertas activas.</li>
+          }
+        </ul>
+      } @else {
+        <p class="sp-cargando">Cargando alertas…</p>
+      }
+    </article>
+
+    <!-- Últimos movimientos -->
+    <article class="sp-tarjeta col-12">
+      <div class="sp-tarjeta__cabecera">
+        <div>
+          <h2>Últimos movimientos</h2>
+          <p>Entradas, salidas, rechazos y aperturas manuales.</p>
+        </div>
+        <a mat-button routerLink="/admin/accesos">Ver historial</a>
+      </div>
+      @if (movimientos(); as lista) {
+        <div class="sp-tabla-contenedor">
+          <table class="sp-tabla">
+            <thead>
+              <tr>
+                <th scope="col">Hora</th>
+                <th scope="col">Movimiento</th>
+                <th scope="col">Placa</th>
+                <th scope="col">Aprendiz</th>
+                <th scope="col">Espacio</th>
+                <th scope="col">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of lista; track m.id) {
+                @let res = resultado[m.resultado];
+                <tr>
+                  <td>{{ m.fecha | date: 'shortTime' }}</td>
+                  <td>
+                    <span class="movimiento">
+                      <mat-icon>{{ tipoMovimiento[m.tipo].icono }}</mat-icon
+                      >{{ tipoMovimiento[m.tipo].etiqueta }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (m.placa) {
+                      <app-placa [placa]="m.placa" />
+                    } @else {
+                      <span class="sin-dato">Sin identificar</span>
+                    }
+                  </td>
+                  <td>{{ m.aprendiz ?? '—' }}</td>
+                  <td>{{ m.espacio ?? '—' }}</td>
+                  <td>
+                    <span class="sp-chip" [class]="'sp-tono--' + res.tono">
+                      <mat-icon class="sp-icono-relleno">{{ res.icono }}</mat-icon
+                      >{{ res.etiqueta }}
+                    </span>
+                    @if (m.motivo) {
+                      <small class="motivo">{{ m.motivo }}</small>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="sp-cargando">Cargando movimientos…</p>
+      }
+    </article>
+  </div>
+</section>

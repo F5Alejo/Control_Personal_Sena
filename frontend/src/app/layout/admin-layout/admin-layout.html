@@ -1,0 +1,95 @@
+<mat-sidenav-container class="contenedor">
+  <mat-sidenav
+    #menuLateral
+    class="lateral"
+    [mode]="esMovil() ? 'over' : 'side'"
+    [opened]="!esMovil()"
+    [fixedInViewport]="esMovil()"
+  >
+    <a class="marca" routerLink="/admin/dashboard" (click)="alNavegar()">
+      <span class="marca__logo" aria-hidden="true"><mat-icon>local_parking</mat-icon></span>
+      <span>
+        <strong>SENA SMART PARK</strong>
+        <small>Panel administrativo</small>
+      </span>
+    </a>
+
+    <nav class="navegacion" aria-label="Módulos del panel">
+      @for (item of menu; track item.ruta) {
+        <a
+          class="navegacion__item"
+          [routerLink]="item.ruta"
+          routerLinkActive="navegacion__item--activo"
+          ariaCurrentWhenActive="page"
+          (click)="alNavegar()"
+        >
+          <mat-icon>{{ item.icono }}</mat-icon>
+          <span>{{ item.etiqueta }}</span>
+          @if (item.ruta === 'alertas' && alertasActivas()) {
+            <span
+              class="navegacion__contador"
+              [attr.aria-label]="alertasActivas() + ' alertas activas'"
+            >
+              {{ alertasActivas() }}
+            </span>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="lateral__pie">
+      <span class="sp-chip lateral__modo"> <mat-icon>science</mat-icon>Datos simulados </span>
+      <small>Prototipo académico · Ley 1581 de 2012: datos ficticios</small>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="contenido">
+    <header class="barra">
+      @if (esMovil()) {
+        <button
+          mat-icon-button
+          type="button"
+          (click)="menuLateral.toggle()"
+          aria-label="Abrir menú"
+        >
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+      <p class="barra__fecha">{{ reloj.ahora() | date: "EEEE d 'de' MMMM · h:mm a" }}</p>
+
+      <span class="barra__espacio"></span>
+
+      <a
+        mat-icon-button
+        routerLink="/admin/alertas"
+        matTooltip="Alertas activas"
+        [attr.aria-label]="alertasActivas() + ' alertas activas'"
+        [matBadge]="alertasActivas() || null"
+        matBadgeColor="warn"
+        matBadgeSize="small"
+      >
+        <mat-icon>notifications</mat-icon>
+      </a>
+
+      <button mat-button type="button" class="usuario" [matMenuTriggerFor]="menuUsuario">
+        <span class="usuario__avatar" aria-hidden="true">{{ iniciales() }}</span>
+        <span class="usuario__nombre">{{ usuario()?.nombre }}</span>
+        <mat-icon iconPositionEnd>expand_more</mat-icon>
+      </button>
+      <mat-menu #menuUsuario="matMenu" xPosition="before">
+        <div class="menu-usuario__datos">
+          <strong>{{ usuario()?.nombre }}</strong>
+          <small>Documento {{ usuario()?.documento }} · Administrador</small>
+        </div>
+        <mat-divider />
+        <button mat-menu-item type="button" (click)="cerrarSesion()">
+          <mat-icon>logout</mat-icon>Cerrar sesión
+        </button>
+      </mat-menu>
+    </header>
+
+    <main>
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

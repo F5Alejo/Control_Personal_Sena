@@ -1,0 +1,135 @@
+<section class="sp-pagina">
+  <header class="sp-encabezado">
+    <div>
+      <h1>Parqueadero</h1>
+      <p>
+        Maqueta con 4 espacios. Cada espacio compara su estado registrado con la lectura de su
+        sensor.
+      </p>
+    </div>
+  </header>
+
+  <div class="conteo" aria-label="Resumen por estado">
+    @for (c of conteo(); track c.etiqueta) {
+      <span class="sp-chip" [class]="'sp-tono--' + c.tono">
+        <mat-icon class="sp-icono-relleno">{{ c.icono }}</mat-icon
+        >{{ c.etiqueta }}: {{ c.cantidad }}
+      </span>
+    }
+    <span class="sp-chip sp-tono--alerta">
+      <mat-icon class="sp-icono-relleno">warning</mat-icon>Inconsistencias: {{ inconsistencias() }}
+    </span>
+  </div>
+
+  <article class="sp-tarjeta">
+    @if (espacios(); as lista) {
+      <app-mapa-parqueadero [espacios]="lista" [detallado]="true" />
+    } @else {
+      <p class="sp-cargando">Cargando espacios…</p>
+    }
+  </article>
+
+  <div class="columnas">
+    <article class="sp-tarjeta">
+      <div class="sp-tarjeta__cabecera">
+        <div>
+          <h2>Asignación automática</h2>
+          <p>
+            Primer espacio libre, compatible con el vehículo y confirmado como libre por su sensor.
+          </p>
+        </div>
+      </div>
+      <ul class="asignacion">
+        @for (a of asignacion(); track a.tipo) {
+          <li>
+            <mat-icon>{{ a.icono }}</mat-icon>
+            <span class="asignacion__tipo">{{ a.titulo }}</span>
+            @if (a.espacio) {
+              <span class="sp-chip sp-tono--libre"
+                ><mat-icon>arrow_forward</mat-icon>{{ a.espacio.codigo }}</span
+              >
+            } @else {
+              <span class="sp-chip sp-tono--ocupado"
+                ><mat-icon>block</mat-icon>Sin espacio disponible</span
+              >
+            }
+          </li>
+        }
+      </ul>
+      <p class="nota">
+        <mat-icon>info</mat-icon>
+        Un espacio con inconsistencia no se asigna hasta que el administrador la revise.
+      </p>
+    </article>
+
+    <article class="sp-tarjeta">
+      <div class="sp-tarjeta__cabecera">
+        <div>
+          <h2>Detalle de espacios</h2>
+          <p>Vehículo, aprendiz y tiempo de permanencia.</p>
+        </div>
+      </div>
+      <div class="sp-tabla-contenedor">
+        <table class="sp-tabla">
+          <thead>
+            <tr>
+              <th scope="col">Espacio</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Placa</th>
+              <th scope="col">Aprendiz</th>
+              <th scope="col">Desde</th>
+              <th scope="col">Permanencia</th>
+              <th scope="col">Sensor</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of espacios() ?? []; track e.codigo) {
+              @let info = estado[e.estado];
+              @let problema = inconsistencia(e);
+              <tr>
+                <td>
+                  <span class="codigo"
+                    ><mat-icon>{{ vehiculo[e.tipo].icono }}</mat-icon
+                    >{{ e.codigo }}</span
+                  >
+                </td>
+                <td>
+                  <span class="sp-chip" [class]="'sp-tono--' + info.tono">
+                    <mat-icon class="sp-icono-relleno">{{ info.icono }}</mat-icon
+                    >{{ info.etiqueta }}
+                  </span>
+                </td>
+                <td>
+                  @if (e.ocupacion) {
+                    <app-placa [placa]="e.ocupacion.placa" />
+                  } @else {
+                    —
+                  }
+                </td>
+                <td>{{ e.ocupacion?.aprendiz ?? '—' }}</td>
+                <td>{{ e.ocupacion ? (e.ocupacion.desde | date: 'shortTime') : '—' }}</td>
+                <td>
+                  {{
+                    e.ocupacion && e.estado === 'OCUPADO'
+                      ? (e.ocupacion.desde | duracion: reloj.ahora())
+                      : '—'
+                  }}
+                </td>
+                <td>
+                  @if (problema) {
+                    <span class="sp-chip sp-tono--alerta">
+                      <mat-icon class="sp-icono-relleno">warning</mat-icon
+                      >{{ textoInconsistencia[problema].etiqueta }}
+                    </span>
+                  } @else {
+                    {{ e.lectura.detectaVehiculo ? 'Detecta vehículo' : 'Libre' }}
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </div>
+</section>

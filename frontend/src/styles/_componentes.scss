@@ -1,0 +1,202 @@
+// Piezas visuales reutilizadas por varias pantallas.
+
+// Página
+.sp-pagina {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  @media (max-width: 600px) {
+    padding: 16px;
+    gap: 16px;
+  }
+}
+
+.sp-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--sp-texto-3);
+  }
+}
+
+// Tarjeta
+.sp-tarjeta {
+  background: var(--sp-superficie);
+  border: 1px solid var(--sp-borde);
+  border-radius: var(--sp-radio);
+  box-shadow: var(--sp-sombra);
+  padding: 20px;
+  min-width: 0;
+
+  @media (max-width: 600px) {
+    padding: 16px;
+  }
+}
+
+.sp-tarjeta__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  h2 {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 0.8125rem;
+    color: var(--sp-texto-3);
+  }
+
+  > div:first-child {
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+
+  > a,
+  > button {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
+// Chip de estado: punto o ícono de color + texto en tinta (nunca solo color)
+// Toma el tono de su propia clase sp-tono--* o, si no la tiene, del contenedor.
+.sp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  background: var(--chip-fondo, var(--sp-fuera-fondo));
+  color: var(--sp-texto);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+
+  .mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    color: var(--chip-color, var(--sp-fuera));
+  }
+}
+
+.sp-punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--sp-fuera));
+  flex: none;
+}
+
+.sp-tono--libre {
+  --chip-color: var(--sp-libre);
+  --chip-fondo: var(--sp-libre-fondo);
+}
+.sp-tono--ocupado {
+  --chip-color: var(--sp-ocupado);
+  --chip-fondo: var(--sp-ocupado-fondo);
+}
+.sp-tono--reservado {
+  --chip-color: var(--sp-reservado);
+  --chip-fondo: var(--sp-reservado-fondo);
+}
+.sp-tono--fuera {
+  --chip-color: var(--sp-fuera);
+  --chip-fondo: var(--sp-fuera-fondo);
+}
+.sp-tono--alerta {
+  --chip-color: var(--sp-alerta);
+  --chip-fondo: var(--sp-alerta-fondo);
+}
+.sp-tono--info {
+  --chip-color: var(--sp-info);
+  --chip-fondo: var(--sp-info-fondo);
+}
+
+// Tabla simple
+.sp-tabla-contenedor {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+
+.sp-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--sp-texto-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--sp-borde);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--sp-rejilla);
+    white-space: nowrap;
+    color: var(--sp-texto-2);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.sp-cargando {
+  color: var(--sp-texto-3);
+  font-size: 0.875rem;
+  padding: 12px 0;
+}
+
+.sp-vacio {
+  color: var(--sp-texto-3);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.sp-oculto-visual {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+// Íconos rellenos (Material Symbols admite variación de relleno)
+.sp-icono-relleno {
+  font-variation-settings: 'FILL' 1;
+}

@@ -9,7 +9,7 @@ módulos → implementación → prueba**. No se avanza a la siguiente fase sin 
 | 1 | Hardware | Hd, maqueta y planos | ⚪ Pendiente |
 | 2 | Comunicación MQTT | Código | ⚪ Pendiente |
 | 3 | Backend y base de datos | Código | ⚪ Pendiente |
-| 4 | Frontend | Código (web / aplicación) | ⚪ Pendiente |
+| 4 | Frontend | Código (web / aplicación) | 🟡 En curso con datos simulados (D-13) — incremento 4.1 listo |
 | 5 | Integración, pruebas y presentación | Presentación y demo | ⚪ Pendiente |
 | 6 | Agente (extra) | ★ Agente | ⚪ Pendiente |
 
@@ -71,7 +71,9 @@ provocada genera una alerta y una notificación.
 
 ## Fase 4 · Frontend
 
-1. Sistema de diseño (colores institucionales, componentes base).
+> Adelantada con datos simulados (D-13). Detalle e incrementos en [`05-plataforma-web.md`](05-plataforma-web.md).
+
+1. ✅ Sistema de diseño (colores institucionales, componentes base), inicio de sesión, estructuras, Dashboard, Parqueadero e inicio del aprendiz (incremento 4.1).
 2. Kiosco QR.
 3. App del aprendiz: inicio de sesión, mis vehículos, acceso QR, mi parqueadero, mis movimientos.
 4. Panel administrativo: dashboard, mapa en tiempo real, aprendices, vehículos, accesos, dispositivos, alertas.

@@ -1,0 +1,45 @@
+// Estilos globales de SENA SMART PARK.
+// Orden: tema de Angular Material → tokens del proyecto → base → componentes compartidos.
+@use '@angular/material' as mat;
+@use './styles/theme-colors' as sena;
+@use './styles/tokens';
+@use './styles/componentes';
+
+html {
+  color-scheme: light;
+  @include mat.theme(
+    (
+      color: (
+        primary: sena.$primary-palette,
+        tertiary: sena.$tertiary-palette,
+        theme-type: light,
+      ),
+      typography: 'Work Sans Variable',
+      density: 0,
+    )
+  );
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sp-fuente);
+  background: var(--sp-fondo);
+  color: var(--sp-texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  color: var(--sp-texto);
+}
+
+a {
+  color: var(--sp-verde-texto);
+}

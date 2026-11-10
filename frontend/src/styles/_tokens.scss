@@ -1,0 +1,48 @@
+// Tokens de diseño: única fuente de verdad para colores, radios y sombras.
+// Los componentes usan siempre estas variables, nunca colores sueltos.
+:root {
+  --sp-fuente: 'Work Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  // Identidad
+  --sp-verde: #39a900; // verde institucional: acentos y fondos grandes
+  --sp-verde-fuerte: #2f8a00; // marcas de gráficos y estado libre (contraste >= 3:1)
+  --sp-verde-texto: #226d00; // texto verde pequeño (contraste >= 4.5:1)
+  --sp-verde-oscuro: #1e4620; // menú lateral y panel de marca
+  --sp-verde-oscuro-2: #163418;
+  --sp-verde-suave: #edf7e6;
+
+  // Neutros
+  --sp-fondo: #f4f6f3; // gris claro de la página
+  --sp-superficie: #ffffff;
+  --sp-superficie-2: #f8faf7;
+  --sp-borde: #e2e6df;
+  --sp-rejilla: #e9ece7; // líneas guía de gráficos
+  --sp-texto: #1b1f1a;
+  --sp-texto-2: #485045;
+  --sp-texto-3: #636b60;
+
+  // Estados de un espacio (siempre acompañados de ícono y texto)
+  --sp-libre: #2f8a00;
+  --sp-libre-fondo: #eaf6e1;
+  --sp-ocupado: #c62828;
+  --sp-ocupado-fondo: #fdecea;
+  --sp-reservado: #e0a800;
+  --sp-reservado-fondo: #fff5d6;
+  --sp-fuera: #7d8579;
+  --sp-fuera-fondo: #eef0ec;
+
+  // Alertas
+  --sp-alerta: #d9480f; // inconsistencias físico / digital
+  --sp-alerta-fondo: #fff0e6;
+  --sp-info: #1f6fb2;
+  --sp-info-fondo: #e8f1fa;
+
+  // Placa vehicular colombiana
+  --sp-placa: #ffd200;
+
+  // Forma
+  --sp-radio: 14px;
+  --sp-radio-sm: 8px;
+  --sp-sombra: 0 1px 2px rgb(16 24 16 / 6%), 0 4px 12px rgb(16 24 16 / 4%);
+  --sp-sombra-alta: 0 8px 28px rgb(16 24 16 / 14%);
+}
