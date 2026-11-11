@@ -12,3 +12,8 @@ export interface EstadoHardware {
 }
 export interface EstadoGeneral { hardware: EstadoHardware; autorizacionActiva: unknown; bloqueoP01: boolean; modoSimulado: boolean; urlPublica: string; }
 export type SensorSimulado = 'online' | 'entrada' | 'cruce' | 'p01';
+export type EstadoAutorizacion =
+  | 'CREADA' | 'ESPERANDO_VEHICULO' | 'AUTORIZADA' | 'BARRERA_ABIERTA' | 'CRUZANDO'
+  | 'FINALIZADA' | 'DENEGADA' | 'EXPIRADA' | 'TIEMPO_AGOTADO' | 'ERROR_MQTT' | 'ERROR_SENSOR';
+export interface CambioAutorizacion { autorizacionId: number; estado: EstadoAutorizacion; direccion: Direccion; motivo?: string; }
+export interface Seleccion { aprendiz: Aprendiz; vehiculo: Vehiculo; direccion: Direccion; }
