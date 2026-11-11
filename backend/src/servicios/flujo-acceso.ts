@@ -23,11 +23,14 @@ interface Contexto {
 }
 
 const MS_IDLE_LCD = 5000;
+/** El táctil capacitivo da falsos toques: tras abrir, se ignoran sus solicitudes este tiempo. */
+const ENFRIAMIENTO_TACTIL_MS = 10000;
 
 export class FlujoAcceso {
   private actual: Contexto | null = null;
   private cola: Promise<unknown> = Promise.resolve();
   private pendientes = 0;
+  private ultimaAperturaTactil = -Infinity;
 
   constructor(private d: DepsFlujo) {}
 
@@ -37,7 +40,15 @@ export class FlujoAcceso {
     estado.on('barrera', (b: { estado: string; cmdId?: string }) => this.encolar(() => this.alBarrera(b)));
     estado.on('cruce', () => this.encolar(() => this.alCruce()));
     estado.on('online', (valor: boolean) => this.encolar(() => this.alCambiarOnline(valor)));
-    estado.on('manual', (m: { solicitud: string }) => this.encolar(() => this.evento('SOLICITUD_MANUAL', m)));
+    estado.on('manual', (m: { solicitud: string }) => void (async () => {
+      await this.encolar(() => this.evento('SOLICITUD_MANUAL', m));
+      // El botón táctil del ESP32 abre la barrera por orden del celador, salvo que haya un acceso en curso.
+      const ahora = this.d.reloj.ahora().getTime();
+      if (m.solicitud === 'apertura' && !this.actual && ahora - this.ultimaAperturaTactil >= ENFRIAMIENTO_TACTIL_MS) {
+        this.ultimaAperturaTactil = ahora;
+        await this.aperturaManual('Botón táctil del ESP32').catch(() => {});
+      }
+    })());
   }
 
   /** El broker o el ESP32 dejaron de responder: cierra el flujo en curso sin dejar accesos a medias. */
@@ -175,7 +186,8 @@ export class FlujoAcceso {
   private async autorizar(ctx: Contexto): Promise<void> {
     ctx.cancelar?.(); ctx.cancelar = null;
     if (ctx.direccion === 'ENTRADA') {
-      const espacioId = await espacioLibreId(this.d.pool);
+      // Con el ESP32 real conectado, el carro de prueba (simulado) deja P01 para el del hardware.
+      const espacioId = await espacioLibreId(this.d.pool, { sinP01: this.d.estado.entradaSimulada });
       if (espacioId === null) { await this.cerrarFlujo(ctx, 'DENEGADA', 'No hay puestos libres'); return; }
       const acc = await this.d.pool.query(
         `INSERT INTO accesos (aprendiz_id, vehiculo_id, espacio_id, autorizacion_id, entrada_en, estado)
@@ -224,14 +236,38 @@ export class FlujoAcceso {
     if (c.direccion === 'ENTRADA') {
       await this.cambiarAcceso(c, 'DENTRO');
       await this.evento('ENTRADA_REGISTRADA', { accesoId: c.accesoId, aprendiz: c.aprendiz, placa: c.placa });
+      await this.vigilarP01(c, true);
     } else {
       const r = await this.d.pool.query('SELECT entrada_en FROM accesos WHERE id = $1', [c.accesoId]);
       const permanenciaSeg = Math.round((this.d.reloj.ahora().getTime() - new Date(r.rows[0].entrada_en).getTime()) / 1000);
       await this.cambiarAcceso(c, 'FINALIZADO', true);
       await this.evento('SALIDA_REGISTRADA', { accesoId: c.accesoId, aprendiz: c.aprendiz, placa: c.placa, permanencia_seg: permanenciaSeg });
+      await this.vigilarP01(c, false);
     }
     await this.sincronizarEspacio();
     await this.cerrarFlujo(c, 'FINALIZADA');
+  }
+
+  /**
+   * El infrarrojo solo vigila P01. Si el acceso es de P01, tras `confirmaP01Ms` se compara lo registrado con lo que
+   * ve el sensor: una entrada sin vehículo en P01 (o una salida con vehículo todavía allí) queda marcada como alerta.
+   */
+  private async vigilarP01(c: Contexto, entra: boolean): Promise<void> {
+    const r = await this.d.pool.query('SELECT e.codigo FROM accesos a JOIN espacios e ON e.id = a.espacio_id WHERE a.id = $1', [c.accesoId]);
+    if (r.rows[0]?.codigo !== 'P01') return;
+    const datos = { accesoId: c.accesoId, aprendiz: c.aprendiz, placa: c.placa };
+    this.d.estado.fijarAlertaP01(null);
+    this.d.temporizador.programar(this.d.tiempos.confirmaP01Ms, () => void this.encolar(async () => {
+      const visto = this.d.estado.snapshot().p01Sensor === true;
+      if (entra) {
+        if (visto) { await this.evento('ENTRADA_CONFIRMADA', datos); return; }
+        this.d.estado.fijarAlertaP01('ENTRADA_NO_CONFIRMADA');
+        await this.evento('ENTRADA_NO_CONFIRMADA', { ...datos, motivo: 'El sensor de P01 no detectó el vehículo' });
+      } else if (visto) {
+        this.d.estado.fijarAlertaP01('SALIDA_NO_CONFIRMADA');
+        await this.evento('SALIDA_NO_CONFIRMADA', { ...datos, motivo: 'El sensor de P01 sigue detectando un vehículo' });
+      }
+    }));
   }
 
   private async alCambiarOnline(valor: boolean): Promise<void> {

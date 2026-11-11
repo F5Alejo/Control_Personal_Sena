@@ -19,9 +19,9 @@ export async function accesoActivoDeVehiculo(pool: pg.Pool | pg.PoolClient, vehi
 }
 
 /** Id del primer puesto activo sin ningún acceso en curso, o null si el parqueadero está lleno. */
-export async function espacioLibreId(pool: pg.Pool | pg.PoolClient): Promise<number | null> {
+export async function espacioLibreId(pool: pg.Pool | pg.PoolClient, opciones: { sinP01?: boolean } = {}): Promise<number | null> {
   const r = await pool.query(
-    `SELECT e.id FROM espacios e WHERE e.activo
+    `SELECT e.id FROM espacios e WHERE e.activo${opciones.sinP01 ? " AND e.codigo <> 'P01'" : ''}
        AND NOT EXISTS (SELECT 1 FROM accesos a WHERE a.espacio_id = e.id AND a.estado IN ${ACTIVOS})
      ORDER BY e.codigo LIMIT 1`);
   return r.rows[0]?.id ?? null;

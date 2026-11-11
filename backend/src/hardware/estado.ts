@@ -9,16 +9,22 @@ export interface SnapshotHardware {
   vehiculoEnEntrada: boolean;
   /** Última distancia medida por el HC-SR04 de la barrera, en cm. */
   distanciaCm: number | null;
-  /** P01 no tiene sensor: lo fija el backend según los accesos registrados. */
+  /** Ocupación de P01 según los accesos registrados (lo fija el backend). */
   p01Ocupado: boolean | null;
+  /** Lectura del infrarrojo de P01: ¿hay un vehículo físicamente en el puesto? */
+  p01Sensor: boolean | null;
+  /** Discrepancia entre lo registrado y lo que ve el infrarrojo de P01. */
+  p01Alerta: 'ENTRADA_NO_CONFIRMADA' | 'SALIDA_NO_CONFIRMADA' | null;
   barrera: 'abierta' | 'cerrada' | 'desconocida';
   telemetria: Telemetria | null;
   actualizado: string;
 }
 
 export class EstadoHardware extends EventEmitter {
+  /** La última lectura de la barrera vino del simulador de sensores (modo prueba con el ESP32 real). */
+  entradaSimulada = false;
   private s: SnapshotHardware = {
-    esp32Online: false, vehiculoEnEntrada: false, distanciaCm: null, p01Ocupado: null, barrera: 'desconocida', telemetria: null,
+    esp32Online: false, vehiculoEnEntrada: false, distanciaCm: null, p01Ocupado: null, p01Sensor: null, p01Alerta: null, barrera: 'desconocida', telemetria: null,
     actualizado: new Date().toISOString(),
   };
 
@@ -36,6 +42,13 @@ export class EstadoHardware extends EventEmitter {
     this.cambio();
   }
 
+  /** Marca (o limpia con null) la discrepancia entre el registro y el infrarrojo de P01. */
+  fijarAlertaP01(alerta: SnapshotHardware['p01Alerta']): void {
+    if (this.s.p01Alerta === alerta) return;
+    this.s.p01Alerta = alerta;
+    this.cambio();
+  }
+
   /** Avisa que algo ajeno a los sensores cambió (por ejemplo quién ocupa cada puesto). */
   refrescar(): void { this.cambio(); }
 
@@ -45,12 +58,13 @@ export class EstadoHardware extends EventEmitter {
         if (this.s.esp32Online === m.valor) return;
         this.s.esp32Online = m.valor;
         if (!m.valor) {
-          this.s.barrera = 'desconocida'; this.s.telemetria = null; this.s.distanciaCm = null;
+          this.s.barrera = 'desconocida'; this.s.telemetria = null; this.s.distanciaCm = null; this.s.p01Sensor = null;
           const habia = this.s.vehiculoEnEntrada; this.s.vehiculoEnEntrada = false;
           if (habia) this.emit('entrada', false);
         }
         this.cambio(); this.emit('online', m.valor); return;
       case 'entrada': {
+        this.entradaSimulada = m.simulado === true;
         const distancia = m.distanciaCm ?? this.s.distanciaCm;
         const cambioPresencia = this.s.vehiculoEnEntrada !== m.presente;
         if (!cambioPresencia && distancia === this.s.distanciaCm) return;
@@ -58,6 +72,13 @@ export class EstadoHardware extends EventEmitter {
         this.cambio();
         if (cambioPresencia) this.emit('entrada', m.presente);
         return;
+      }
+      case 'p01': {
+        if (this.s.p01Sensor === m.ocupado) return;
+        this.s.p01Sensor = m.ocupado;
+        // Una lectura que concuerda con lo registrado resuelve la alerta pendiente.
+        if ((this.s.p01Alerta === 'ENTRADA_NO_CONFIRMADA' && m.ocupado) || (this.s.p01Alerta === 'SALIDA_NO_CONFIRMADA' && !m.ocupado)) this.s.p01Alerta = null;
+        this.cambio(); this.emit('p01', m.ocupado); return;
       }
       case 'cruce':
         this.emit('cruce'); return;

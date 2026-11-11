@@ -120,4 +120,76 @@ describe('flujo de entrada', () => {
     await s.autorizar();
     expect(s.pub.de('senapark/cmd/lcd').at(-1)!.payload).toEqual({ linea1: 'Fabio Zorro', linea2: 'Acerque el carro' });
   });
+
+  describe('P01 reservado para el hardware', () => {
+    it('una entrada simulada (modo prueba con el ESP32 real) no toma P01', async () => {
+      await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true, simulado: true });
+      expect((await pool.query("SELECT e.codigo FROM accesos a JOIN espacios e ON e.id = a.espacio_id")).rows[0].codigo).toBe('P02');
+    });
+    it('una entrada del sensor real sigue yendo a P01', async () => {
+      await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true });
+      expect((await pool.query("SELECT e.codigo FROM accesos a JOIN espacios e ON e.id = a.espacio_id")).rows[0].codigo).toBe('P01');
+    });
+  });
+
+  describe('verificación con el infrarrojo de P01', () => {
+    const entrarSinEsperar = async () => {
+      await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true });
+      await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: 'cmd-1' }); await s.hw({ tipo: 'cruce' }); await s.avanzar(3000);
+    };
+    it('si el sensor detecta el vehículo en P01 a tiempo, la entrada queda confirmada', async () => {
+      await entrarSinEsperar();
+      await s.hw({ tipo: 'p01', ocupado: true });
+      await s.avanzar(15000);
+      expect(await s.eventos('ENTRADA_CONFIRMADA')).toHaveLength(1);
+      expect(await s.eventos('ENTRADA_NO_CONFIRMADA')).toHaveLength(0);
+      expect(s.estado.snapshot().p01Alerta).toBeNull();
+    });
+    it('si el sensor no lo detecta, la entrada sigue DENTRO pero se marca la alerta', async () => {
+      await entrarSinEsperar();
+      await s.avanzar(15000);
+      expect((await s.acceso()).estado).toBe('DENTRO');
+      expect(await s.eventos('ENTRADA_NO_CONFIRMADA')).toHaveLength(1);
+      expect(s.estado.snapshot().p01Alerta).toBe('ENTRADA_NO_CONFIRMADA');
+    });
+    it('la alerta se limpia cuando el sensor detecta el vehículo después', async () => {
+      await entrarSinEsperar(); await s.avanzar(15000);
+      await s.hw({ tipo: 'p01', ocupado: true });
+      expect(s.estado.snapshot().p01Alerta).toBeNull();
+    });
+    it('un vehículo que va a otro puesto no se verifica con el sensor de P01', async () => {
+      await entrarCompleto(s);
+      await s.hw({ tipo: 'p01', ocupado: true });
+      const b = await crearAprendiz(pool, { cedula: '2', nombre: 'Ana Gómez' });
+      const v2 = await crearVehiculo(pool, b.id, { placa: 'MOT12A', tipo: 'MOTO' });
+      const deps = { pool, reloj: s.reloj, estado: s.estado, vigenciaQrSeg: 60 };
+      const r = await crearAutorizacion(deps, { aprendizId: b.id, vehiculoId: v2.id, direccion: 'ENTRADA' });
+      if (!r.ok) throw new Error(r.motivo);
+      const c = await consumirToken(deps, r.token);
+      if (!c.ok) throw new Error(c.motivo);
+      await s.flujo.alConfirmarToken(c.autorizacion.id);
+      await s.hw({ tipo: 'entrada', presente: true });
+      await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: barrera(s).at(-1).cmd_id });
+      await s.hw({ tipo: 'cruce' }); await s.avanzar(3000); await s.avanzar(15000);
+      expect(await s.eventos('ENTRADA_NO_CONFIRMADA')).toHaveLength(0);
+    });
+    it('en la salida, si el sensor sigue viendo el vehículo se marca SALIDA_NO_CONFIRMADA', async () => {
+      await entrarCompleto(s);
+      await s.hw({ tipo: 'p01', ocupado: true });
+      await s.autorizar('SALIDA');
+      await s.hw({ tipo: 'entrada', presente: true });
+      await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: barrera(s).at(-1).cmd_id });
+      await s.hw({ tipo: 'cruce' }); await s.avanzar(3000); await s.avanzar(15000);
+      expect(await s.eventos('SALIDA_NO_CONFIRMADA')).toHaveLength(1);
+    });
+    it('en la salida, si el sensor queda libre no hay alerta', async () => {
+      await entrarCompleto(s);
+      await s.hw({ tipo: 'p01', ocupado: true });
+      await s.autorizar('SALIDA');
+      await s.hw({ tipo: 'entrada', presente: true });
+      await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: barrera(s).at(-1).cmd_id });
+      await s.hw({ tipo: 'cruce' }); await s.hw({ tipo: 'p01', ocupado: false }); await s.avanzar(3000); await s.avanzar(15000);
+      expect(await s.eventos('SALIDA_NO_CONFIRMADA')).toHaveLength(0);
+    });
+  });
 });

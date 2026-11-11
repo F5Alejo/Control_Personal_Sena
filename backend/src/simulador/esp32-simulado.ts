@@ -1,8 +1,8 @@
 import { conectarMqtt, type OpcionesMqtt } from '../mqtt/cliente.js';
 import { TOPICS } from '../mqtt/topics.js';
 
-export type SensorSimulado = 'online' | 'entrada' | 'cruce';
-export const SENSORES_SIMULADOS: readonly SensorSimulado[] = ['online', 'entrada', 'cruce'];
+export type SensorSimulado = 'online' | 'entrada' | 'cruce' | 'p01';
+export const SENSORES_SIMULADOS: readonly SensorSimulado[] = ['online', 'entrada', 'cruce', 'p01'];
 
 /** Igual que el firmware: a esta distancia o menos el HC-SR04 da por presente al vehículo. */
 export const UMBRAL_PRESENTE_CM = 20;
@@ -45,7 +45,7 @@ export async function crearEsp32Simulado(
     angulo = c.accion === 'abrir' ? 90 : 0;
     void cliente.publicar(TOPICS.barreraEstado, { estado: c.accion === 'abrir' ? 'abierta' : 'cerrada', cmd_id: c.cmd_id }).catch(() => {});
   };
-  const publicarEntrada = (presente: boolean, distancia_cm: number) => cliente.publicar(TOPICS.entrada, { presente, distancia_cm });
+  const publicarEntrada = (presente: boolean, distancia_cm: number) => cliente.publicar(TOPICS.entrada, { presente, distancia_cm, ...(soloSensores ? { simulado: true } : {}) });
 
   return {
     async conectar() {
@@ -65,6 +65,7 @@ export async function crearEsp32Simulado(
       switch (sensor) {
         case 'online': if (soloSensores) return; await cliente.publicar(TOPICS.estado, valor === false ? 'offline' : 'online', { retain: true }); activo = valor !== false; return;
         case 'entrada': { const presente = valor ?? true; await publicarEntrada(presente, presente ? DISTANCIA_CERCA_CM : DISTANCIA_LEJOS_CM); return; }
+        case 'p01': await cliente.publicar(TOPICS.p01, { ocupado: valor ?? true }); return;
         case 'cruce': await cliente.publicar(TOPICS.paso, { evento: 'cruce' }); return;
       }
     },

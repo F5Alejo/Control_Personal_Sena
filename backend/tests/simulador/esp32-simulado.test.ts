@@ -48,6 +48,12 @@ describe('ESP32 simulado', () => {
     await esp.acercar(18);
     await espera(() => estado.snapshot().distanciaCm === 18 && estado.snapshot().vehiculoEnEntrada);
   });
+  it('poner p01 publica la lectura del infrarrojo de P01', async () => {
+    await esp.poner('p01', true);
+    await espera(() => estado.snapshot().p01Sensor === true);
+    await esp.poner('p01', false);
+    await espera(() => estado.snapshot().p01Sensor === false);
+  });
   it('cruce emite el evento de cruce', async () => {
     let cruces = 0; estado.on('cruce', () => cruces++);
     await esp.poner('cruce');
@@ -92,7 +98,8 @@ describe('ruta del simulador', () => {
     expect((await request(app).post('/api/simulador/distancia').send({ distancia_cm: 35 })).status).toBe(204);
     expect(llamadas.at(-1)).toEqual(['distancia', 35]);
     expect((await request(app).post('/api/simulador/distancia').send({ distancia_cm: -4 })).status).toBe(400);
-    expect((await request(app).post('/api/simulador/sensor').send({ sensor: 'p01', valor: true })).status).toBe(400);
+    expect((await request(app).post('/api/simulador/sensor').send({ sensor: 'p01', valor: true })).status).toBe(204);
+    expect(llamadas.at(-1)).toEqual(['p01', true]);
     expect((await request(app).post('/api/simulador/sensor').send({ sensor: 'laser' })).status).toBe(400);
   });
 });

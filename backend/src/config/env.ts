@@ -4,6 +4,8 @@ export interface Tiempos {
   esperaVehiculoMs: number;
   esperaCruceMs: number;
   estacionarMs: number;
+  /** Tiempo que se da al infrarrojo de P01 para confirmar la llegada o la salida del vehículo. */
+  confirmaP01Ms: number;
   comandoVigenciaMs: number;
 }
 
@@ -33,6 +35,7 @@ const esquema = z.object({
   ESPERA_VEHICULO_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(30000)),
   ESPERA_CRUCE_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(15000)),
   ESTACIONAR_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(3000)),
+  CONFIRMA_P01_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(15000)),
 });
 
 export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -47,6 +50,7 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
       esperaVehiculoMs: e.ESPERA_VEHICULO_MS,
       esperaCruceMs: e.ESPERA_CRUCE_MS,
       estacionarMs: e.ESTACIONAR_MS,
+      confirmaP01Ms: e.CONFIRMA_P01_MS,
       comandoVigenciaMs: 5000,
     },
     modoSimulado: e.MODO_SIMULADO === 'true',

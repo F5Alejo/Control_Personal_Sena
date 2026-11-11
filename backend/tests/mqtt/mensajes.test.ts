@@ -17,8 +17,11 @@ describe('parsearMensaje', () => {
   it('la telemetría acepta solo parte de los campos', () => {
     expect(parsearMensaje('senapark/telemetria', j({ rssi: -70, uptime_s: 5 }))).toEqual({ ok: true, mensaje: { tipo: 'telemetria', rssi: -70, uptimeS: 5 } });
   });
-  it('ya no acepta el topic de p01 ni el de ambiente', () => {
-    expect(parsearMensaje('senapark/sensores/p01', j({ ocupado: true })).ok).toBe(false);
+  it('parsea el sensor infrarrojo de P01', () => {
+    expect(parsearMensaje('senapark/sensores/p01', j({ ocupado: true }))).toEqual({ ok: true, mensaje: { tipo: 'p01', ocupado: true } });
+    expect(parsearMensaje('senapark/sensores/p01', j({ ocupado: 'si' })).ok).toBe(false);
+  });
+  it('ya no acepta el topic de ambiente', () => {
     expect(parsearMensaje('senapark/ambiente', j({ temp: 20, hum: 50, movimiento: false })).ok).toBe(false);
   });
   it('parsea cruce', () => {

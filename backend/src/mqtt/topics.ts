@@ -1,6 +1,7 @@
 export const TOPICS = {
   estado: 'senapark/estado',
   entrada: 'senapark/sensores/entrada',
+  p01: 'senapark/sensores/p01',
   paso: 'senapark/sensores/paso',
   telemetria: 'senapark/telemetria',
   barreraEstado: 'senapark/barrera/estado',

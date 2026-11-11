@@ -29,9 +29,31 @@ describe('casos sueltos del flujo', () => {
     await s.avanzar(15000);
     expect(s.pub.de('senapark/cmd/barrera').map((m: any) => m.payload.accion)).toEqual(['abrir', 'cerrar']);
   });
-  it('la solicitud manual del hardware queda como evento SOLICITUD_MANUAL y no abre nada', async () => {
+  it('el botón táctil (apertura) abre la barrera y deja SOLICITUD_MANUAL y APERTURA_MANUAL', async () => {
     await s.hw({ tipo: 'manual', solicitud: 'apertura' });
+    await s.flujo.esperar();
     expect(await s.eventos('SOLICITUD_MANUAL')).toHaveLength(1);
+    expect(s.pub.de('senapark/cmd/barrera')[0].payload).toMatchObject({ accion: 'abrir' });
+    expect(await s.eventos('APERTURA_MANUAL')).toHaveLength(1);
+    await s.avanzar(15000);
+    expect(s.pub.de('senapark/cmd/barrera').map((m: any) => m.payload.accion)).toEqual(['abrir', 'cerrar']);
+  });
+  it('pulsaciones seguidas del táctil abren una sola vez y de nuevo pasado el enfriamiento', async () => {
+    await s.hw({ tipo: 'manual', solicitud: 'apertura' }); await s.flujo.esperar();
+    await s.hw({ tipo: 'manual', solicitud: 'apertura' }); await s.flujo.esperar();
+    expect(s.pub.de('senapark/cmd/barrera').filter((m: any) => m.payload.accion === 'abrir')).toHaveLength(1);
+    s.reloj.avanzar(10001);
+    await s.hw({ tipo: 'manual', solicitud: 'apertura' }); await s.flujo.esperar();
+    expect(s.pub.de('senapark/cmd/barrera').filter((m: any) => m.payload.accion === 'abrir')).toHaveLength(2);
+  });
+  it('la solicitud de mantenimiento solo queda en el historial', async () => {
+    await s.hw({ tipo: 'manual', solicitud: 'mantenimiento' });
+    expect(await s.eventos('SOLICITUD_MANUAL')).toHaveLength(1);
+    expect(s.pub.de('senapark/cmd/barrera')).toHaveLength(0);
+  });
+  it('con un acceso en curso el botón táctil no abre', async () => {
+    await s.autorizar();
+    await s.hw({ tipo: 'manual', solicitud: 'apertura' });
     expect(s.pub.de('senapark/cmd/barrera')).toHaveLength(0);
   });
   it('ESP32 offline al escanear el QR cierra la autorización con ERROR_MQTT', async () => {
