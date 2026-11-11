@@ -15,6 +15,7 @@ import { conectarMqtt } from './mqtt/cliente.js';
 import { enlazarHardware } from './mqtt/enlace.js';
 import { FlujoAcceso } from './servicios/flujo-acceso.js';
 import { crearTiempoReal } from './tiempo-real/socket.js';
+import { crearEsp32Simulado } from './simulador/esp32-simulado.js';
 import { servirFrontend } from './web/estaticos.js';
 
 const config = cargarConfig();
@@ -49,7 +50,13 @@ flujo.iniciar();
 cliente.enDesconexion(() => { estado.aplicar({ tipo: 'online', valor: false }); void flujo.alPerderMqtt(); });
 estado.on('cambio', () => { estadoGeneral({ estado, flujo, config }).then((e) => emisor.emitir('estado:cambio', e)).catch((e) => console.error('[estado]', e)); });
 
-const app = crearApp({ pool, reloj: relojSistema, config, emisor, publicador: cliente, temporizador: temporizadorSistema, estado, flujo });
+// En modo simulado el ESP32 de mentira entra por el broker, como entraría el real.
+const simulador = config.modoSimulado
+  ? await crearEsp32Simulado({ url: urlMqtt, clientId: `senapark-esp32-simulado-${process.pid}`, usuario: config.mqtt.usuario, clave: config.mqtt.clave, ca: config.mqtt.ca })
+  : undefined;
+await simulador?.conectar();
+
+const app = crearApp({ pool, reloj: relojSistema, config, emisor, publicador: cliente, temporizador: temporizadorSistema, estado, flujo, simulador });
 servirFrontend(app, fileURLToPath(new URL('../../frontend/dist/frontend/browser', import.meta.url)));
 servidor.on('request', app);
 await new Promise<void>((ok, ko) => { servidor.once('error', ko); servidor.listen(config.puerto, ok); });
@@ -63,7 +70,7 @@ async function apagar(): Promise<void> {
   if (cerrando) return; cerrando = true;
   servidor.closeAllConnections();
   await new Promise((ok) => servidor.close(ok));
-  await cliente.cerrar(); await broker?.cerrar(); await pool.end();
+  await simulador?.desconectar().catch(() => {}); await simulador?.cerrar(); await cliente.cerrar(); await broker?.cerrar(); await pool.end();
   process.exit(0);
 }
 process.on('SIGINT', () => void apagar());
