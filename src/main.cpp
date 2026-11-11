@@ -19,12 +19,13 @@
 #include "secrets.h"
 
 // ---------- pines ----------
-const int PIN_TRIG = 5, PIN_ECHO = 18, PIN_SERVO = 13, PIN_LED_ROJO = 25, PIN_LED_VERDE = 26, PIN_TOQUE = 27;
+const int PIN_TRIG = 5, PIN_ECHO = 18, PIN_SERVO = 13, PIN_LED_ROJO = 25, PIN_LED_VERDE = 26, PIN_TOQUE = 27, PIN_IR_P01 = 14;
 const int SDA_LCD = 21, SCL_LCD = 22, SDA_OLED = 16, SCL_OLED = 17;
 
 // ---------- topics (iguales a backend/src/mqtt/topics.ts) ----------
 const char* T_ESTADO = "senapark/estado";
 const char* T_ENTRADA = "senapark/sensores/entrada";
+const char* T_P01 = "senapark/sensores/p01";
 const char* T_PASO = "senapark/sensores/paso";
 const char* T_TELEMETRIA = "senapark/telemetria";
 const char* T_BARRERA_ESTADO = "senapark/barrera/estado";
@@ -45,6 +46,12 @@ const unsigned long CADA_TELEMETRIA_MS = 5000;
 const unsigned long CADA_PAGINA_MS = 4000;
 const unsigned long SIN_MQTT_CERRAR_MS = 5000;       // sin broker este tiempo => se cierra la barrera
 const unsigned long TOQUE_LARGO_MS = 2000;
+const unsigned long TOQUE_MIN_MS = 300;              // un toque más corto es ruido del sensor capacitivo
+const unsigned long TOQUE_ENFRIAMIENTO_MS = 4000;    // entre una solicitud y la siguiente
+const bool IR_ACTIVO_BAJO = true;                    // el módulo infrarrojo pone la salida en LOW al ver un obstáculo
+const unsigned long CADA_IR_MS = 50;
+const int LECTURAS_IR = 4;                           // lecturas seguidas iguales para aceptar un cambio
+const unsigned long LATIDO_IR_MS = 5000;
 
 // ---------- objetos ----------
 WiFiClient red;
@@ -58,10 +65,13 @@ bool hayOled = false;
 int angulo = ANGULO_CERRADA;
 bool barreraAbierta = false;
 bool confirmarPendiente = false;
+unsigned long tServoActivo = 0;
 unsigned long tMovimiento = 0;
 char cmdIdPendiente[48] = "";
 
 bool presente = false;
+unsigned long tMovHc = 0;        // última vez que el HC-SR04 vio cambiar la distancia
+float distanciaPrev = -1;
 float distancia = -1;            // -1: sin eco
 int lecturasContrarias = 0;
 bool vistoPresenteAbierta = false;
@@ -71,8 +81,12 @@ float ultimaDistPublicada = -1;
 unsigned long tUltimaEntrada = 0, tUltimaMedida = 0, tUltimaTelemetria = 0, tUltimaPagina = 0;
 unsigned long tSinMqtt = 0, tReintentoMqtt = 0, tReintentoWifi = 0;
 
+bool irOcupado = false;          // lectura estable del infrarrojo de P01
+int irContrarias = 0;
+unsigned long tUltimoIr = 0, tUltimaLecturaIr = 0;
+
 bool toquePrevio = false;
-unsigned long tToque = 0;
+unsigned long tToque = 0, tUltimaSolicitud = 0;
 bool toqueLargoEnviado = false;
 
 int pagina = 0;
@@ -111,7 +125,10 @@ void ponerLeds() {
 void moverBarrera(bool abrir, const char* cmdId) {
   barreraAbierta = abrir;
   angulo = abrir ? ANGULO_ABIERTA : ANGULO_CERRADA;
+  if (!servo.attached()) servo.attach(PIN_SERVO, 500, 2400);
   servo.write(angulo);
+  tServoActivo = millis();
+  Serial.printf("[servo] %s id=%s\n", abrir ? "ABRIR" : "CERRAR", cmdId ? cmdId : "");
   ponerLeds();
   copiar(cmdIdPendiente, cmdId, sizeof cmdIdPendiente - 1);
   confirmarPendiente = true;
@@ -163,7 +180,7 @@ void conectarMqtt() {
     mqtt.subscribe(T_CMD_LCD, 1);
     mqtt.publish(T_ESTADO, "online", true);
     ponerLcd("SENA SMART PARK", "Listo");
-    ultimaDistPublicada = -1; tUltimaEntrada = 0; tUltimaTelemetria = 0; // publica todo de nuevo
+    ultimaDistPublicada = -1; tUltimaEntrada = 0; tUltimoIr = 0; tUltimaTelemetria = 0; // publica todo de nuevo
     if (confirmarPendiente) confirmarBarrera();
   }
 }
@@ -189,6 +206,8 @@ void leerSensor() {
   if (millis() - tUltimaMedida < CADA_MEDIDA_MS) return;
   tUltimaMedida = millis();
   distancia = medirCm();
+  if (fabsf(distancia - distanciaPrev) >= 3.0f) tMovHc = millis();
+  distanciaPrev = distancia;
   bool cerca = distancia >= 0 && distancia < UMBRAL_PRESENTE_CM;
   bool lejos = distancia < 0 || distancia >= UMBRAL_AUSENTE_CM;
   // Cambio de presencia con histéresis y varias lecturas seguidas (evita falsos por rebotes del eco).
@@ -208,6 +227,22 @@ void leerSensor() {
   if (cambio || (movio && millis() - tUltimaEntrada >= CADA_DISTANCIA_MS) || millis() - tUltimaEntrada >= LATIDO_ENTRADA_MS) publicarEntrada();
 }
 
+// ---------- infrarrojo de P01 ----------
+void publicarIr() {
+  String s = String("{\"ocupado\":") + (irOcupado ? "true" : "false") + "}";
+  if (publicar(T_P01, s)) tUltimoIr = millis();
+}
+
+void leerIr() {
+  if (millis() - tUltimaLecturaIr < CADA_IR_MS) return;
+  tUltimaLecturaIr = millis();
+  bool visto = (digitalRead(PIN_IR_P01) == (IR_ACTIVO_BAJO ? LOW : HIGH));
+  irContrarias = (visto != irOcupado) ? irContrarias + 1 : 0;
+  bool cambio = false;
+  if (irContrarias >= LECTURAS_IR) { irOcupado = visto; irContrarias = 0; cambio = true; }
+  if (cambio || millis() - tUltimoIr >= LATIDO_IR_MS) publicarIr();
+}
+
 // ---------- botón táctil ----------
 void leerToque() {
   bool t = digitalRead(PIN_TOQUE) == HIGH;
@@ -215,9 +250,13 @@ void leerToque() {
   if (t && !toqueLargoEnviado && millis() - tToque >= TOQUE_LARGO_MS) {
     publicar(T_MANUAL, "{\"solicitud\":\"mantenimiento\"}"); toqueLargoEnviado = true; copiar(ultimoMensaje, "mantenimiento", 23);
   }
-  if (!t && toquePrevio && !toqueLargoEnviado && millis() - tToque >= 50) {
+  if (!t && toquePrevio && !toqueLargoEnviado && millis() - tToque >= TOQUE_MIN_MS && millis() - tUltimaSolicitud >= TOQUE_ENFRIAMIENTO_MS) {
+    // Si el HC-SR04 acaba de ver movimiento, el 'toque' es la mano/vehículo cerca del táctil, no un botón.
+    if (millis() - tMovHc < 2000) { Serial.println("[toque] ignorado: movimiento frente al HC-SR04"); toquePrevio = t; return; }
+    tUltimaSolicitud = millis();
     publicar(T_MANUAL, "{\"solicitud\":\"apertura\"}"); copiar(ultimoMensaje, "apertura manual", 23);
   }
+  if (t != toquePrevio) Serial.printf("[toque] %s (distancia %.0f cm)\n", t ? "HIGH" : "LOW", distancia);
   toquePrevio = t;
 }
 
@@ -250,7 +289,8 @@ void dibujarOled() {
       oled.printf("WiFi : %s\n", WiFi.status() == WL_CONNECTED ? "conectado" : "sin red");
       oled.printf("MQTT : %s\n", mqtt.connected() ? "conectado" : "sin broker");
       oled.printf("Barrera: %s\n", barreraAbierta ? "ABIERTA" : "cerrada");
-      oled.printf("Vehiculo: %s\n", presente ? "presente" : "ninguno");
+      oled.printf("Entrada: %s\n", presente ? "vehiculo" : "libre");
+      oled.printf("P01    : %s\n", irOcupado ? "ocupado" : "libre");
       break;
     case 1:
       titulo("DISTANCIA HC-SR04");
@@ -298,9 +338,16 @@ void rotarOled() {
 void setup() {
   Serial.begin(115200);
   pinMode(PIN_TRIG, OUTPUT); pinMode(PIN_ECHO, INPUT); digitalWrite(PIN_TRIG, LOW);
-  pinMode(PIN_LED_ROJO, OUTPUT); pinMode(PIN_LED_VERDE, OUTPUT); pinMode(PIN_TOQUE, INPUT);
+  pinMode(PIN_LED_ROJO, OUTPUT); pinMode(PIN_LED_VERDE, OUTPUT); pinMode(PIN_TOQUE, INPUT); pinMode(PIN_IR_P01, INPUT_PULLUP);
   servo.setPeriodHertz(50); servo.attach(PIN_SERVO, 500, 2400);
   servo.write(ANGULO_CERRADA);   // siempre arranca cerrada
+  tServoActivo = millis();
+  esp_reset_reason_t rr = esp_reset_reason();
+  snprintf(ultimoMensaje, sizeof ultimoMensaje, "reinicio:%s", rr == ESP_RST_BROWNOUT ? "BROWNOUT" : rr == ESP_RST_POWERON ? "encendido" : rr == ESP_RST_PANIC ? "error" : rr == ESP_RST_SW ? "software" : "otro");
+  Serial.printf("[arranque] %s\n", ultimoMensaje);
+  // Prueba de LEDs al encender: verde, luego rojo. Si uno no se ve, el problema es el cableado de ese LED.
+  digitalWrite(PIN_LED_ROJO, LOW); digitalWrite(PIN_LED_VERDE, HIGH); delay(600);
+  digitalWrite(PIN_LED_VERDE, LOW); digitalWrite(PIN_LED_ROJO, HIGH); delay(600);
   ponerLeds();
 
   Wire.begin(SDA_LCD, SCL_LCD);
@@ -328,7 +375,9 @@ void loop() {
     if (millis() - tSinMqtt >= 2000) ponerLcd("SENA SMART PARK", "Sin conexion");
   }
   if (confirmarPendiente && millis() - tMovimiento >= MOVER_SERVO_MS) confirmarBarrera();
-  leerSensor();
+  // Servo sin señal cuando está quieto: así el ruido eléctrico (HC-SR04, WiFi) no lo hace temblar ni moverse.
+  if (servo.attached() && !confirmarPendiente && millis() - tServoActivo >= 1500) servo.detach();
+  leerSensor(); leerIr();
   leerToque();
   publicarTelemetria();
   rotarOled();
