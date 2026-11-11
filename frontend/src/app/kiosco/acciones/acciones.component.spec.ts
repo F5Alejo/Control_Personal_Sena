@@ -10,11 +10,12 @@ function montar(resultado: unknown) {
   TestBed.configureTestingModule({ imports: [AccionesComponent], providers: [
     { provide: ApiService, useValue: api }, { provide: MatDialog, useValue: dialog }] });
   const f = TestBed.createComponent(AccionesComponent);
+  f.detectChanges();
   const click = async (texto: string) => {
     (Array.from((f.nativeElement as HTMLElement).querySelectorAll('button')).find(b => b.textContent?.includes(texto))!).click();
     await f.whenStable(); await f.whenStable();
   };
-  return { api, click };
+  return { api, click, f };
 }
 
 describe('AccionesComponent', () => {
@@ -35,5 +36,14 @@ describe('AccionesComponent', () => {
     const { api, click } = montar('Prueba de barrera');
     await click('Apertura manual');
     expect(api.aperturaManual).toHaveBeenCalledWith('Prueba de barrera');
+  });
+
+  it('en modo solo manual no ofrece reiniciar la demo', async () => {
+    const { f } = montar(true);
+    f.componentRef.setInput('soloManual', true);
+    f.detectChanges();
+    const textos = Array.from((f.nativeElement as HTMLElement).querySelectorAll('button')).map(b => b.textContent);
+    expect(textos.join()).toContain('Apertura manual');
+    expect(textos.join()).not.toContain('Reiniciar demo');
   });
 });

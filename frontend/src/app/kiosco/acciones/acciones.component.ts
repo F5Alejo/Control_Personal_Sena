@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,7 +11,7 @@ import { ConfirmarDialogoComponent, DatosConfirmar } from './confirmar-dialogo.c
   imports: [MatButtonModule],
   template: `
     <button mat-stroked-button (click)="abrirManual()">Apertura manual</button>
-    <button mat-button (click)="reiniciar()">Reiniciar demo</button>
+    @if (!soloManual()) { <button mat-button (click)="reiniciar()">Reiniciar demo</button> }
     @if (mensaje()) { <span class="msg" role="status">{{ mensaje() }}</span> }
   `,
   styles: `:host { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .msg { color: var(--suave); font-size: 14px; }`,
@@ -19,6 +19,8 @@ import { ConfirmarDialogoComponent, DatosConfirmar } from './confirmar-dialogo.c
 export class AccionesComponent {
   private api = inject(ApiService);
   private dialog = inject(MatDialog);
+  /** El celador solo ve la apertura manual; reiniciar la demo es de administración. */
+  soloManual = input(false);
   protected mensaje = signal('');
 
   private confirmar(datos: DatosConfirmar): Promise<unknown> {

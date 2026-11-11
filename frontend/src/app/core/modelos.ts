@@ -10,7 +10,8 @@ export interface EstadoHardware {
   barrera: 'abierta' | 'cerrada' | 'desconocida';
   ambiente: { temp: number; hum: number; movimiento: boolean } | null; actualizado: string;
 }
-export interface EstadoGeneral { hardware: EstadoHardware; autorizacionActiva: unknown; bloqueoP01: boolean; modoSimulado: boolean; urlPublica: string; }
+export interface AutorizacionActiva { id: number; estado: EstadoAutorizacion; direccion: Direccion; aprendiz: string; placa: string; tipo: string; }
+export interface EstadoGeneral { hardware: EstadoHardware; autorizacionActiva: AutorizacionActiva | null; bloqueoP01: boolean; modoSimulado: boolean; urlPublica: string; }
 export type SensorSimulado = 'online' | 'entrada' | 'cruce' | 'p01';
 export type EstadoAutorizacion =
   | 'CREADA' | 'ESPERANDO_VEHICULO' | 'AUTORIZADA' | 'BARRERA_ABIERTA' | 'CRUZANDO'
