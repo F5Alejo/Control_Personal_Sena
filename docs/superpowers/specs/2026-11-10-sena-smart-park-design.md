@@ -118,9 +118,9 @@ Igual que la entrada, con estas diferencias:
 
 ## 7. Hardware y pines (revisión 2026-11-11, definida por el usuario)
 
-Se retiran LM393, TCRT5000, HC-SR501, DHT11 y FC-28. El HC-SR04 pasa de vigilar P01 a vigilar la aproximación a la barrera. No lleva relé.
+Se retiran LM393, HC-SR501, DHT11 y FC-28. El HC-SR04 pasa de vigilar P01 a vigilar la aproximación a la barrera. No lleva relé. El módulo infrarrojo digital (el de los dos LED amarillos) vuelve, ahora como verificador de P01: confirma que el vehículo autorizado sí llegó al puesto.
 
-Alimentación: ESP32 por USB. Riel de 5 V tomado de VIN: servo, HC-SR04 y LCD. Riel de 3,3 V: OLED y TTP223B. Los GND de todo van unidos. ECHO del HC-SR04 entrega 5 V y pasa por divisor de resistencias (100 Ω arriba y 220 Ω a GND, ≈3,4 V) antes del ESP32. Si el servo reinicia el ESP32 al moverse, se agrega un condensador (470 µF) en el riel de 5 V o una fuente aparte.
+Alimentación: ESP32 por USB. Riel de 5 V tomado de VIN: servo, HC-SR04 y LCD. Riel de 3,3 V: OLED, TTP223B e infrarrojo de P01. Los GND de todo van unidos. ECHO del HC-SR04 entrega 5 V y pasa por divisor de resistencias (100 Ω arriba y 220 Ω a GND, ≈3,4 V) antes del ESP32. Si el servo reinicia el ESP32 al moverse, se agrega un condensador (470 µF) en el riel de 5 V o una fuente aparte.
 
 | Función | Componente | GPIO |
 |---|---|---|
@@ -130,6 +130,7 @@ Alimentación: ESP32 por USB. Riel de 5 V tomado de VIN: servo, HC-SR04 y LCD. R
 | Barrera | Servo SG90 | 13 |
 | LED rojo / verde | indicadores | 25 / 26 |
 | Mantenimiento / apertura manual | TTP223B | 27 |
+| Verificación de P01 (¿llegó el vehículo?) | Infrarrojo digital, salida OUT (LOW = obstáculo) | 14 |
 
 Sensado sin LM393 ni TCRT5000: el HC-SR04 es el único sensor de vehículo. «Vehículo presente» = distancia menor al umbral durante varias lecturas seguidas. «Pasó» = estuvo presente, la barrera abrió y dejó de estar presente. P01 ya no tiene sensor: el backend lo marca ocupado al finalizar una entrada y libre al finalizar una salida. Prioridad: HC-SR04 y servo son críticos; el resto no bloquea el flujo.
 
@@ -143,6 +144,7 @@ ESP32 → backend:
 
 - `senapark/estado`: `online`/`offline`, con Last Will y retenido.
 - `senapark/sensores/entrada`: `{presente: bool, distancia_cm}` en cada cambio de presencia, cuando la distancia varía 3 cm (máx. cada 0,5 s) y cada 5 s como latido.
+- `senapark/sensores/p01`: `{ocupado: bool}` del infrarrojo de P01, en cada cambio (4 lecturas seguidas a 50 ms) y cada 5 s como latido.
 - `senapark/sensores/paso`: `{evento: "cruce"}`, deducido por el firmware con el HC-SR04.
 - `senapark/telemetria`: `{rssi, uptime_s, ip, heap, angulo}` cada 5 s.
 - `senapark/barrera/estado`: `{estado: "abierta"|"cerrada", cmd_id}`.
@@ -210,3 +212,9 @@ Si el tiempo aprieta, se recorta en este orden: OLED, estadísticas y gráficas.
 - **Estado inicial de P01:** si al arrancar P01 aparece ocupado sin un acceso `DENTRO`, se registra el evento `P01_OCUPADO_SIN_ACCESO` y se bloquean las entradas hasta que se resuelva.
 - **Reinicio de la demo:** el kiosco tiene un botón "Reiniciar demo" que cierra accesos activos y limpia autorizaciones pendientes, para ensayar varias veces sin tocar la base de datos.
 - **Modo simulado:** el kiosco tiene un modo oculto de pruebas que permite simular las lecturas del HC-SR04 (distancia y cruce) (publicando por MQTT como si fuera el ESP32). Sirve para desarrollar el backend y para ensayar la demo si un sensor falla.
+
+## 7 bis. Verificación de P01 con el infrarrojo
+
+Toda entrada va primero a P01 (el primer puesto libre). Tras registrarse la entrada, el backend espera `CONFIRMA_P01_MS` (15 s por defecto) y mira el infrarrojo: si ve el vehículo registra `ENTRADA_CONFIRMADA`; si no, la entrada **sigue registrada como DENTRO** pero se marca la alerta `ENTRADA_NO_CONFIRMADA` (el vehículo pudo irse a otro lado), visible en el historial, el panel de equipos y la escena. En la salida, si pasado ese tiempo el sensor sigue viendo un vehículo se marca `SALIDA_NO_CONFIRMADA`. Una lectura posterior que concuerde con lo registrado limpia la alerta. Los demás puestos (P02–P06) no tienen sensor y no se verifican. El módulo se alimenta a 3,3 V, OUT a GPIO 14 con pull-up interno.
+
+**P01 reservado para el hardware.** En modo prueba con el ESP32 real, el simulador de sensores marca sus lecturas de la barrera con `simulado: true`; una entrada así nunca recibe P01 (va al primer puesto libre siguiente). Así el primer carro de la presentación, el del hardware, ocupa P01.
