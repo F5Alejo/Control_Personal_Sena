@@ -6,6 +6,7 @@ import type { Emisor, Publicador, Reloj, Temporizador } from './dominio/contrato
 import { ErrorHttp } from './errores.js';
 import { rutasAprendices } from './modulos/aprendices/aprendices.rutas.js';
 import type { EstadoHardware } from './hardware/estado.js';
+import { soloLocal } from './web/solo-local.js';
 import { rutasPanel } from './modulos/panel/panel.rutas.js';
 import type { FlujoAcceso } from './servicios/flujo-acceso.js';
 import { rutasAutorizaciones } from './modulos/autorizaciones/autorizaciones.rutas.js';
@@ -26,6 +27,8 @@ export interface Dependencias {
 export function crearApp(d: Dependencias): Express {
   const app = express();
   app.use(express.json());
+  // Todo /api es del equipo del celador salvo confirmar el QR, que es lo único que hace el celular.
+  app.use('/api', (req, res, next) => (/^\/acceso\/[^/]+\/confirmar$/.test(req.path) ? next() : soloLocal(req, res, next)));
   app.use('/api', rutasAprendices(d.pool), rutasVehiculos(d.pool), rutasAutorizaciones(d), rutasPanel(d));
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Ruta no encontrada' }); });
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {

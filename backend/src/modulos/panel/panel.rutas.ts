@@ -4,7 +4,6 @@ import type { Dependencias } from '../../app.js';
 import { detectarIpLocal } from '../../config/ip-local.js';
 import { ErrorHttp } from '../../errores.js';
 import { listarEventos } from '../../eventos/eventos.repo.js';
-import { soloLocal } from '../../web/solo-local.js';
 import { listarAccesos } from '../accesos/accesos.repo.js';
 
 export async function estadoGeneral(d: Pick<Dependencias, 'estado' | 'flujo' | 'config'>) {
@@ -29,12 +28,12 @@ export function rutasPanel(d: Dependencias): Router {
   r.get('/estado', async (_req, res) => { res.json(await estadoGeneral(d)); });
   r.get('/accesos', async (req, res) => { res.json(await listarAccesos(d.pool, limite(req.query.limite))); });
   r.get('/eventos', async (req, res) => { res.json(await listarEventos(d.pool, limite(req.query.limite))); });
-  r.post('/barrera/abrir-manual', soloLocal, async (req, res) => {
+  r.post('/barrera/abrir-manual', async (req, res) => {
     const { motivo } = manual.parse(req.body);
     if (!d.estado.snapshot().esp32Online) throw new ErrorHttp(409, 'El ESP32 está sin conexión');
     await d.flujo.aperturaManual(motivo);
     res.status(204).end();
   });
-  r.post('/demo/reiniciar', soloLocal, async (_req, res) => { await d.flujo.reiniciarDemo(); res.status(204).end(); });
+  r.post('/demo/reiniciar', async (_req, res) => { await d.flujo.reiniciarDemo(); res.status(204).end(); });
   return r;
 }
