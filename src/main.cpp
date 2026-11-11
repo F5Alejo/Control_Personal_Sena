@@ -48,7 +48,8 @@ const unsigned long SIN_MQTT_CERRAR_MS = 5000;       // sin broker este tiempo =
 const unsigned long TOQUE_LARGO_MS = 2000;
 const unsigned long TOQUE_MIN_MS = 300;              // un toque más corto es ruido del sensor capacitivo
 const unsigned long TOQUE_ENFRIAMIENTO_MS = 4000;    // entre una solicitud y la siguiente
-const bool IR_ACTIVO_BAJO = true;                    // el módulo infrarrojo pone la salida en LOW al ver un obstáculo
+const bool IR_ACTIVO_BAJO = false;                   // el PIR HC-SR501 pone la salida en HIGH al ver movimiento
+const unsigned long CALENTAMIENTO_PIR_MS = 30000;    // el PIR da disparos falsos al energizarse
 const unsigned long CADA_IR_MS = 50;
 const int LECTURAS_IR = 4;                           // lecturas seguidas iguales para aceptar un cambio
 const unsigned long LATIDO_IR_MS = 5000;
@@ -227,7 +228,7 @@ void leerSensor() {
   if (cambio || (movio && millis() - tUltimaEntrada >= CADA_DISTANCIA_MS) || millis() - tUltimaEntrada >= LATIDO_ENTRADA_MS) publicarEntrada();
 }
 
-// ---------- infrarrojo de P01 ----------
+// ---------- sensor de movimiento (PIR) de P01 ----------
 void publicarIr() {
   String s = String("{\"ocupado\":") + (irOcupado ? "true" : "false") + "}";
   if (publicar(T_P01, s)) tUltimoIr = millis();
@@ -236,7 +237,7 @@ void publicarIr() {
 void leerIr() {
   if (millis() - tUltimaLecturaIr < CADA_IR_MS) return;
   tUltimaLecturaIr = millis();
-  bool visto = (digitalRead(PIN_IR_P01) == (IR_ACTIVO_BAJO ? LOW : HIGH));
+  bool visto = millis() >= CALENTAMIENTO_PIR_MS && (digitalRead(PIN_IR_P01) == (IR_ACTIVO_BAJO ? LOW : HIGH));
   irContrarias = (visto != irOcupado) ? irContrarias + 1 : 0;
   bool cambio = false;
   if (irContrarias >= LECTURAS_IR) { irOcupado = visto; irContrarias = 0; cambio = true; }
@@ -290,7 +291,7 @@ void dibujarOled() {
       oled.printf("MQTT : %s\n", mqtt.connected() ? "conectado" : "sin broker");
       oled.printf("Barrera: %s\n", barreraAbierta ? "ABIERTA" : "cerrada");
       oled.printf("Entrada: %s\n", presente ? "vehiculo" : "libre");
-      oled.printf("P01    : %s\n", irOcupado ? "ocupado" : "libre");
+      oled.printf("P01    : %s\n", irOcupado ? "movim." : "quieto");
       break;
     case 1:
       titulo("DISTANCIA HC-SR04");
@@ -338,7 +339,7 @@ void rotarOled() {
 void setup() {
   Serial.begin(115200);
   pinMode(PIN_TRIG, OUTPUT); pinMode(PIN_ECHO, INPUT); digitalWrite(PIN_TRIG, LOW);
-  pinMode(PIN_LED_ROJO, OUTPUT); pinMode(PIN_LED_VERDE, OUTPUT); pinMode(PIN_TOQUE, INPUT); pinMode(PIN_IR_P01, INPUT_PULLUP);
+  pinMode(PIN_LED_ROJO, OUTPUT); pinMode(PIN_LED_VERDE, OUTPUT); pinMode(PIN_TOQUE, INPUT); pinMode(PIN_IR_P01, INPUT);
   servo.setPeriodHertz(50); servo.attach(PIN_SERVO, 500, 2400);
   servo.write(ANGULO_CERRADA);   // siempre arranca cerrada
   tServoActivo = millis();
