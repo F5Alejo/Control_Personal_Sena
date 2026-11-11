@@ -33,6 +33,21 @@ describe('panel', () => {
     expect(r.body).toMatchObject({ autorizacionActiva: null, modoSimulado: false, urlPublica: 'http://192.168.1.10:3000' });
     expect(r.body.bloqueoP01).toBeUndefined();
   });
+  it('GET /api/estado lista los seis puestos con su ocupante', async () => {
+    await sembrarAccesos(1);
+    await pool.query("UPDATE accesos SET estado='DENTRO'");
+    const r = await request(montar().app).get('/api/estado');
+    expect(r.body.espacios).toHaveLength(6);
+    expect(r.body.espacios[0]).toMatchObject({ codigo: 'P01', ocupado: true, tipo: 'CARRO', aprendiz: 'Fabio' });
+    expect(r.body.espacios[1]).toMatchObject({ codigo: 'P02', ocupado: false, placa: null, tipo: null });
+  });
+  it('GET /api/estado indica si hay pruebas desde la página', async () => {
+    expect((await request(montar().app).get('/api/estado')).body.pruebas).toBe(false);
+    const sim = { conectar: async () => {}, desconectar: async () => {}, poner: async () => {}, acercar: async () => {}, cerrar: async () => {} };
+    const d = depsPrueba(pool, { simulador: sim });
+    expect((await request(crearApp(d)).get('/api/estado')).body.pruebas).toBe(true);
+    expect((await request(crearApp(d)).post('/api/simulador/distancia').send({ distancia_cm: 10 })).status).toBe(204);
+  });
   it('GET /api/accesos respeta el límite y ordena del más reciente', async () => {
     await sembrarAccesos(3);
     const r = await request(montar().app).get('/api/accesos?limite=2');

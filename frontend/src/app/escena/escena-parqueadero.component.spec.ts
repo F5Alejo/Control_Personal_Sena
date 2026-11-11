@@ -11,14 +11,42 @@ function montar() {
   const poner = async (e: ReturnType<typeof estadoBase>) => { rt.estado$.next(e); await f.whenStable(); };
   return { el, poner };
 }
+const PUESTOS = () => ['P01', 'P02', 'P03', 'P04', 'P05', 'P06'].map((codigo) => ({ codigo, ocupado: false, placa: null as string | null, tipo: null as string | null, aprendiz: null as string | null }));
 const aut = (estado: string, direccion = 'ENTRADA', tipo = 'CARRO') => ({ id: 1, estado, direccion, aprendiz: 'Ana Ruiz', placa: 'ABC123', tipo });
 
 describe('EscenaParqueaderoComponent', () => {
-  it('dibuja seis puestos y avisa que solo P01 es real', async () => {
+  it('dibuja los puestos que manda el backend y cuenta los libres', async () => {
     const { el, poner } = montar();
-    await poner(estadoBase());
+    await poner(estadoBase({}, { espacios: PUESTOS() }));
     expect(el.querySelectorAll('.puesto')).toHaveLength(6);
-    expect(el.textContent).toContain('Solo P01 es real');
+    expect(el.textContent).toContain('6 de 6 puestos libres');
+  });
+  it('cada puesto ocupado muestra su vehículo con el tipo y la placa que manda el backend (no se pierde al volver a la pantalla)', async () => {
+    const { el, poner } = montar();
+    const espacios = PUESTOS(); espacios[0] = { codigo: 'P01', ocupado: true, placa: 'MOT12A', tipo: 'MOTO', aprendiz: 'Ana' };
+    espacios[2] = { codigo: 'P03', ocupado: true, placa: 'ABC123', tipo: 'CARRO', aprendiz: 'Luis' };
+    await poner(estadoBase({}, { espacios }));
+    const ocupados = el.querySelectorAll('.puesto.ocupado');
+    expect(ocupados).toHaveLength(2);
+    expect(ocupados[0].querySelector('svg')!.getAttribute('viewBox')).toBe('0 0 64 28');
+    expect(ocupados[0].textContent).toContain('MOT12A');
+    expect(ocupados[1].querySelector('svg')!.getAttribute('viewBox')).not.toBe('0 0 64 28');
+    expect(el.textContent).toContain('4 de 6 puestos libres');
+  });
+  it('en una salida el vehículo deja de dibujarse en su puesto mientras se mueve', async () => {
+    const { el, poner } = montar();
+    const espacios = PUESTOS(); espacios[0] = { codigo: 'P01', ocupado: true, placa: 'ABC123', tipo: 'CARRO', aprendiz: 'Ana' };
+    await poner(estadoBase({}, { espacios, autorizacionActiva: aut('BARRERA_ABIERTA', 'SALIDA') } as any));
+    expect(el.querySelectorAll('.puesto.ocupado')).toHaveLength(0);
+  });
+  it('el sensor dice siempre si hay vehículo: presente, sin vehículo o sin conexión', async () => {
+    const { el, poner } = montar();
+    await poner(estadoBase({ vehiculoEnEntrada: false }));
+    expect(el.querySelector('.presencia')!.textContent).toContain('Sin vehículo');
+    await poner(estadoBase({ vehiculoEnEntrada: true, distanciaCm: 12 }));
+    expect(el.querySelector('.presencia')!.textContent).toContain('Vehículo presente');
+    await poner(estadoBase({ esp32Online: false }));
+    expect(el.querySelector('.presencia')!.textContent).toContain('sin conexión');
   });
   it('en una entrada el vehículo espera en la puerta y al cruzar va a P01', async () => {
     const { el, poner } = montar();
@@ -26,14 +54,7 @@ describe('EscenaParqueaderoComponent', () => {
     expect(el.querySelector('.veh')!.classList.contains('lugar-puerta')).toBe(true);
     expect(el.textContent).toContain('ABC123');
     await poner(estadoBase({}, { autorizacionActiva: aut('CRUZANDO') } as any));
-    expect(el.querySelector('.veh')!.classList.contains('lugar-p01')).toBe(true);
-  });
-  it('con P01 ocupado y sin flujo deja el vehículo estacionado y visible', async () => {
-    const { el, poner } = montar();
-    await poner(estadoBase({ p01Ocupado: true }));
-    expect(el.querySelector('.veh')!.classList.contains('oculto')).toBe(false);
-    expect(el.querySelector('.puesto.real')!.classList.contains('ocupado')).toBe(true);
-    expect(el.textContent).toContain('P01 ocupado');
+    expect(el.querySelector('.veh')!.classList.contains('lugar-dentro')).toBe(true);
   });
   it('dibuja una moto cuando el vehículo es moto', async () => {
     const { el, poner } = montar();

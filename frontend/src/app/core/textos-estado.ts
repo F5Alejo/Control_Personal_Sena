@@ -20,7 +20,7 @@ export const MOTIVOS: Record<string, string> = {
   VEHICULO_NO_PERTENECE: 'El vehículo no pertenece al aprendiz',
   YA_ESTA_DENTRO: 'El vehículo ya está dentro del parqueadero',
   NO_ESTA_DENTRO: 'El vehículo no está dentro del parqueadero',
-  ESPACIO_OCUPADO: 'El espacio P01 está ocupado',
+  ESPACIO_OCUPADO: 'No hay puestos libres en el parqueadero',
   AUTORIZACION_ACTIVA: 'Ya hay una autorización en curso',
   DISPOSITIVO_OFFLINE: 'El dispositivo de la barrera está sin conexión',
 };

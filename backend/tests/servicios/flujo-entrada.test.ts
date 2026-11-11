@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { crearPoolPrueba, limpiarTablas, prepararBd } from '../ayudas/bd.js';
-import { montarFlujo } from './ayudas-flujo.js';
+import { entrarCompleto, montarFlujo } from './ayudas-flujo.js';
+import { crearAprendiz } from '../../src/modulos/aprendices/aprendices.repo.js';
+import { crearVehiculo } from '../../src/modulos/vehiculos/vehiculos.repo.js';
+import { consumirToken, crearAutorizacion } from '../../src/modulos/autorizaciones/autorizaciones.servicio.js';
 
 const pool = crearPoolPrueba();
 let s: Awaited<ReturnType<typeof montarFlujo>>;
@@ -31,6 +34,28 @@ describe('flujo de entrada', () => {
     expect((await pool.query("SELECT estado FROM espacios WHERE codigo='P01'")).rows[0].estado).toBe('OCUPADO');
     expect(await s.eventos('ENTRADA_REGISTRADA')).toHaveLength(1);
     expect(s.flujo.autorizacionActiva()).toBeNull();
+  });
+  it('un segundo vehículo recibe otro puesto y el estado lista cada ocupante', async () => {
+    await entrarCompleto(s);
+    const b = await crearAprendiz(pool, { cedula: '2', nombre: 'Ana Gómez' });
+    const v2 = await crearVehiculo(pool, b.id, { placa: 'MOT12A', tipo: 'MOTO' });
+    const deps = { pool, reloj: s.reloj, estado: s.estado, vigenciaQrSeg: 60 };
+    const r = await crearAutorizacion(deps, { aprendizId: b.id, vehiculoId: v2.id, direccion: 'ENTRADA' });
+    if (!r.ok) throw new Error(r.motivo);
+    const c = await consumirToken(deps, r.token);
+    if (!c.ok) throw new Error(c.motivo);
+    await s.flujo.alConfirmarToken(c.autorizacion.id);
+    await s.hw({ tipo: 'entrada', presente: true });
+    const cmd = barrera(s).at(-1).cmd_id;
+    await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: cmd });
+    await s.hw({ tipo: 'cruce' });
+    await s.avanzar(3000);
+    expect((await pool.query("SELECT codigo FROM espacios e JOIN accesos a ON a.espacio_id=e.id WHERE a.vehiculo_id=$1", [v2.id])).rows[0].codigo).toBe('P02');
+    const lista = await s.flujo.listarEspacios();
+    expect(lista.map((e) => e.codigo)).toEqual(['P01', 'P02', 'P03', 'P04', 'P05', 'P06']);
+    expect(lista[0]).toMatchObject({ ocupado: true, placa: 'ABC123', tipo: 'CARRO', aprendiz: 'Fabio Zorro' });
+    expect(lista[1]).toMatchObject({ ocupado: true, placa: 'MOT12A', tipo: 'MOTO' });
+    expect(lista[2]).toMatchObject({ ocupado: false, placa: null });
   });
   it('no publica abrir mientras no haya vehículo en la entrada', async () => {
     await s.autorizar();

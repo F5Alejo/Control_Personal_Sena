@@ -14,5 +14,5 @@ export class TiempoRealFalso {
 
 export const estadoBase = (h: Partial<EstadoGeneral['hardware']> = {}, o: Partial<EstadoGeneral> = {}): EstadoGeneral => ({
   hardware: { esp32Online: true, vehiculoEnEntrada: false, distanciaCm: null, p01Ocupado: false, barrera: 'cerrada', telemetria: null, actualizado: '', ...h },
-  autorizacionActiva: null, modoSimulado: true, urlPublica: 'http://x', ...o,
+  autorizacionActiva: null, espacios: [], modoSimulado: true, pruebas: true, urlPublica: 'http://x', ...o,
 });

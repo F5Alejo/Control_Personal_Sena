@@ -1,16 +1,16 @@
 import { AutorizacionActiva } from './modelos';
 
-export type Lugar = 'afuera' | 'puerta' | 'p01';
+export type Lugar = 'afuera' | 'puerta' | 'dentro';
 export interface PosicionVehiculo { visible: boolean; lugar: Lugar }
 
-/** Dónde dibujar el vehículo del flujo: afuera de la barrera, en la puerta o estacionado en P01. */
-export function posicionVehiculo(aut: AutorizacionActiva | null, p01Ocupado: boolean | null): PosicionVehiculo {
-  const reposo: PosicionVehiculo = p01Ocupado ? { visible: true, lugar: 'p01' } : { visible: false, lugar: 'afuera' };
+/** Dónde dibujar el vehículo del flujo: afuera de la barrera, en la puerta o dentro. Los estacionados se dibujan en su puesto. */
+export function posicionVehiculo(aut: AutorizacionActiva | null): PosicionVehiculo {
+  const reposo: PosicionVehiculo = { visible: false, lugar: 'afuera' };
   if (!aut) return reposo;
   if (aut.direccion === 'ENTRADA') {
     switch (aut.estado) {
       case 'ESPERANDO_VEHICULO': case 'AUTORIZADA': case 'BARRERA_ABIERTA': return { visible: true, lugar: 'puerta' };
-      case 'CRUZANDO': return { visible: true, lugar: 'p01' };
+      case 'CRUZANDO': return { visible: true, lugar: 'dentro' };
       default: return reposo;
     }
   }

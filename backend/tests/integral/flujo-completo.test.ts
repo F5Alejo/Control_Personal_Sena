@@ -109,13 +109,12 @@ describe('prueba integral (broker real, BD real, ESP32 simulado)', () => {
     expect(ev[0].detalle.permanencia_seg).toBe(8100);
   });
 
-  it('un segundo aprendiz no puede entrar mientras P01 está ocupado', async () => {
+  it('un segundo aprendiz entra en otro puesto mientras P01 está ocupado', async () => {
     const f = await registrar('1000000001', 'Fabio Zorro', 'ABC123');
     const o = await registrar('1000000002', 'Ana Gómez', 'XYZ987');
     await entrar(f.a, f.v);
     const { r } = await autorizar(o.a, o.v, 'ENTRADA');
-    expect(r.status).toBe(409);
-    expect(r.body.motivo).toBe('ESPACIO_OCUPADO');
+    expect(r.status).toBe(201);
   });
 
   it('entrada sin carrito en la barrera no abre y expira', async () => {

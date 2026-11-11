@@ -4,9 +4,9 @@ import { ApiService } from '../../core/api.service';
 import { TiempoRealService } from '../../core/tiempo-real.service';
 import { TiempoRealFalso, estadoBase } from '../../core/pruebas';
 
-function montar(modoSimulado: boolean) {
+function montar(modoSimulado: boolean, pruebas = true) {
   const rt = new TiempoRealFalso();
-  rt.estado$.next(estadoBase({}, { modoSimulado }));
+  rt.estado$.next(estadoBase({}, { modoSimulado, pruebas }));
   const api = { simular: vi.fn().mockResolvedValue(undefined), acercar: vi.fn().mockResolvedValue(undefined) };
   TestBed.configureTestingModule({ imports: [SimuladorComponent], providers: [
     { provide: ApiService, useValue: api }, { provide: TiempoRealService, useValue: rt }] });
@@ -14,8 +14,16 @@ function montar(modoSimulado: boolean) {
 }
 
 describe('SimuladorComponent', () => {
-  it('no se renderiza cuando modoSimulado es false', async () => {
-    const { f } = montar(false);
+  it('con el ESP32 real y pruebas activas muestra los botones de sensor pero no los de en línea', async () => {
+    const { f } = montar(false, true);
+    await f.whenStable();
+    const t = (f.nativeElement as HTMLElement).textContent!;
+    expect(t).toContain('Carrito en la entrada');
+    expect(t).toContain('Carrito cruza la barrera');
+    expect(t).not.toContain('ESP32 sin conexión');
+  });
+  it('no se renderiza cuando no hay pruebas disponibles', async () => {
+    const { f } = montar(false, false);
     await f.whenStable();
     expect((f.nativeElement as HTMLElement).querySelector('button')).toBeNull();
   });

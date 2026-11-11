@@ -24,9 +24,9 @@ beforeEach(async () => {
 });
 
 const crear = (direccion: 'ENTRADA' | 'SALIDA' = 'ENTRADA', aid = a.id, vid = v.id) => crearAutorizacion(d, { aprendizId: aid, vehiculoId: vid, direccion });
-async function ponerDentro(aid: number, vid: number, estadoAcceso = 'DENTRO') {
+async function ponerDentro(aid: number, vid: number, estadoAcceso = 'DENTRO', puesto = 'P01') {
   const au = await pool.query("INSERT INTO autorizaciones_qr (token_hash, aprendiz_id, vehiculo_id, direccion, estado, expira_en) VALUES (md5(random()::text),$1,$2,'ENTRADA','FINALIZADA', now()) RETURNING id", [aid, vid]);
-  await pool.query("INSERT INTO accesos (aprendiz_id, vehiculo_id, espacio_id, autorizacion_id, entrada_en, estado) VALUES ($1,$2,(SELECT id FROM espacios WHERE codigo='P01'),$3,now(),$4)", [aid, vid, au.rows[0].id, estadoAcceso]);
+  await pool.query("INSERT INTO accesos (aprendiz_id, vehiculo_id, espacio_id, autorizacion_id, entrada_en, estado) VALUES ($1,$2,(SELECT id FROM espacios WHERE codigo=$5),$3,now(),$4)", [aid, vid, au.rows[0].id, estadoAcceso, puesto]);
 }
 
 describe('crearAutorizacion: entrada', () => {
@@ -58,10 +58,18 @@ describe('crearAutorizacion: entrada', () => {
     await ponerDentro(a.id, v.id);
     expect(await crear()).toEqual({ ok: false, motivo: 'YA_ESTA_DENTRO' });
   });
-  it('rechaza entrada con P01 ocupado por otro vehículo', async () => {
+  it('con P01 ocupado por otro vehículo todavía hay puesto libre', async () => {
     const b = await crearAprendiz(pool, { cedula: '2', nombre: 'Otro' });
     const v2 = await crearVehiculo(pool, b.id, { placa: 'ZZZ999', tipo: 'CARRO' });
     await ponerDentro(b.id, v2.id);
+    expect((await crear()).ok).toBe(true);
+  });
+  it('rechaza la entrada cuando los seis puestos están ocupados', async () => {
+    for (let i = 0; i < 6; i++) {
+      const b = await crearAprendiz(pool, { cedula: `9${i}`, nombre: `Otro ${i}` });
+      const vx = await crearVehiculo(pool, b.id, { placa: `ZZ${i}99${i}`, tipo: 'CARRO' });
+      await ponerDentro(b.id, vx.id, 'DENTRO', `P0${i + 1}`);
+    }
     expect(await crear()).toEqual({ ok: false, motivo: 'ESPACIO_OCUPADO' });
   });
   it('rechaza si el ESP32 está offline', async () => {

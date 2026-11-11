@@ -36,6 +36,9 @@ export class EstadoHardware extends EventEmitter {
     this.cambio();
   }
 
+  /** Avisa que algo ajeno a los sensores cambió (por ejemplo quién ocupa cada puesto). */
+  refrescar(): void { this.cambio(); }
+
   aplicar(m: MensajeHardware): void {
     switch (m.tipo) {
       case 'online':

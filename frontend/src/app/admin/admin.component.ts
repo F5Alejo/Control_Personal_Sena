@@ -5,15 +5,17 @@ import { BarraComponent } from '../compartido/barra.component';
 import { EstadoPanelComponent } from '../kiosco/estado-panel/estado-panel.component';
 import { AccionesComponent } from '../kiosco/acciones/acciones.component';
 import { SimuladorComponent } from '../kiosco/simulador/simulador.component';
+import { PuestosComponent } from '../compartido/puestos.component';
 import { HistorialComponent } from '../kiosco/historial/historial.component';
 
 @Component({
   selector: 'app-admin',
-  imports: [BarraComponent, EstadoPanelComponent, AccionesComponent, SimuladorComponent, HistorialComponent],
+  imports: [BarraComponent, EstadoPanelComponent, AccionesComponent, SimuladorComponent, HistorialComponent, PuestosComponent],
   template: `
     <app-barra />
     <main>
       <h1>Administración</h1>
+      <section class="tarjeta"><h2>Puestos del parqueadero</h2><app-puestos /></section>
       <div class="rejilla">
         <section class="tarjeta"><h2>Equipos</h2><app-estado-panel /></section>
         <div class="columna">

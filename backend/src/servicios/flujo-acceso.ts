@@ -1,3 +1,4 @@
+import { espacioLibreId, listarEspacios, type EspacioOcupado } from '../modulos/accesos/accesos.repo.js';
 import { randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import type { Emisor, Publicador, Reloj, Temporizador } from '../dominio/contratos.js';
@@ -174,10 +175,12 @@ export class FlujoAcceso {
   private async autorizar(ctx: Contexto): Promise<void> {
     ctx.cancelar?.(); ctx.cancelar = null;
     if (ctx.direccion === 'ENTRADA') {
+      const espacioId = await espacioLibreId(this.d.pool);
+      if (espacioId === null) { await this.cerrarFlujo(ctx, 'DENEGADA', 'No hay puestos libres'); return; }
       const acc = await this.d.pool.query(
         `INSERT INTO accesos (aprendiz_id, vehiculo_id, espacio_id, autorizacion_id, entrada_en, estado)
-         VALUES ($1,$2,(SELECT id FROM espacios WHERE codigo='P01'),$3,$4,'ENTRANDO') RETURNING id`,
-        [ctx.aprendizId, ctx.vehiculoId, ctx.id, this.d.reloj.ahora()]);
+         VALUES ($1,$2,$3,$4,$5,'ENTRANDO') RETURNING id`,
+        [ctx.aprendizId, ctx.vehiculoId, espacioId, ctx.id, this.d.reloj.ahora()]);
       ctx.accesoId = acc.rows[0].id;
       this.d.emisor.emitir('acceso:cambio', { accesoId: ctx.accesoId, estado: 'ENTRANDO' });
     } else {
@@ -258,7 +261,10 @@ export class FlujoAcceso {
          (SELECT 1 FROM accesos a WHERE a.espacio_id = espacios.id AND a.estado IN ('DENTRO','SALIENDO')) THEN 'OCUPADO' ELSE 'LIBRE' END`);
     const r = await this.d.pool.query("SELECT estado FROM espacios WHERE codigo = 'P01'");
     this.d.estado.fijarP01(r.rows[0]?.estado === 'OCUPADO');
+    this.d.estado.refrescar();
   }
+
+  listarEspacios(): Promise<EspacioOcupado[]> { return listarEspacios(this.d.pool); }
 
   private async alVencerEspera(ctx: Contexto): Promise<void> {
     if (this.actual !== ctx || ctx.estado !== 'ESPERANDO_VEHICULO') return;

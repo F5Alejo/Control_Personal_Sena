@@ -24,9 +24,10 @@ export interface Esp32Simulado {
  */
 export async function crearEsp32Simulado(
   conexion: Omit<OpcionesMqtt, 'will'>,
-  opciones: { autoBarrera?: boolean; telemetriaMs?: number } = {},
+  opciones: { autoBarrera?: boolean; telemetriaMs?: number; soloSensores?: boolean } = {},
 ): Promise<Esp32Simulado> {
-  const autoBarrera = opciones.autoBarrera ?? true;
+  const soloSensores = opciones.soloSensores ?? false;
+  const autoBarrera = soloSensores ? false : opciones.autoBarrera ?? true;
   const cliente = await conectarMqtt({ ...conexion, will: { topic: TOPICS.estado, payload: 'offline', retain: true } });
   let suscrito = false; let activo = false; let angulo = 0; let reloj: NodeJS.Timeout | null = null;
   const inicio = Date.now();
@@ -50,17 +51,19 @@ export async function crearEsp32Simulado(
     async conectar() {
       if (!suscrito) { await cliente.suscribir(TOPICS.cmdBarrera, alComando); suscrito = true; }
       activo = true;
+      if (soloSensores) return; // el ESP32 real es quien dice si está en línea y trae la telemetría
       await cliente.publicar(TOPICS.estado, 'online', { retain: true });
       await telemetria();
       if (opciones.telemetriaMs && !reloj) { reloj = setInterval(() => void telemetria(), opciones.telemetriaMs); reloj.unref(); }
     },
     async desconectar() {
       activo = false;
+      if (soloSensores) return;
       await cliente.publicar(TOPICS.estado, 'offline', { retain: true });
     },
     async poner(sensor, valor) {
       switch (sensor) {
-        case 'online': await cliente.publicar(TOPICS.estado, valor === false ? 'offline' : 'online', { retain: true }); activo = valor !== false; return;
+        case 'online': if (soloSensores) return; await cliente.publicar(TOPICS.estado, valor === false ? 'offline' : 'online', { retain: true }); activo = valor !== false; return;
         case 'entrada': { const presente = valor ?? true; await publicarEntrada(presente, presente ? DISTANCIA_CERCA_CM : DISTANCIA_LEJOS_CM); return; }
         case 'cruce': await cliente.publicar(TOPICS.paso, { evento: 'cruce' }); return;
       }

@@ -33,7 +33,7 @@ export function crearApp(d: Dependencias): Express {
   // Todo /api es del equipo del celador salvo confirmar el QR, que es lo único que hace el celular.
   app.use('/api', (req, res, next) => (/^\/acceso\/[^/]+\/confirmar$/.test(req.path) ? next() : soloLocal(req, res, next)));
   app.use('/api', rutasAprendices(d.pool), rutasVehiculos(d.pool), rutasAutorizaciones(d), rutasPanel(d));
-  if (d.config.modoSimulado && d.simulador) app.use('/api', rutasSimulador(d.simulador));
+  if (d.simulador) app.use('/api', rutasSimulador(d.simulador));
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Ruta no encontrada' }); });
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof ErrorHttp) { res.status(err.estado).json({ error: err.message, ...err.extra }); return; }

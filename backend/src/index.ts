@@ -42,18 +42,20 @@ await enlazarHardware(cliente, estado, (topic, motivo) => {
 
 const servidor = http.createServer();
 let flujo!: FlujoAcceso;
-const emisor = crearTiempoReal(servidor, () => estadoGeneral({ estado, flujo, config }));
+let simulador!: Awaited<ReturnType<typeof crearEsp32Simulado>>;
+const emisor = crearTiempoReal(servidor, () => estadoGeneral({ estado, flujo, config, simulador }));
 flujo = new FlujoAcceso({ pool, reloj: relojSistema, estado, publicador: cliente, emisor, temporizador: temporizadorSistema, tiempos: config.tiempos });
 await flujo.recuperarAlArrancar(); // también deja P01 en el estado en vivo según los accesos
 flujo.iniciar();
 // Sin conexión al broker no llega el Last Will del ESP32: se da por offline para no autorizar a ciegas.
 cliente.enDesconexion(() => { estado.aplicar({ tipo: 'online', valor: false }); void flujo.alPerderMqtt(); });
-estado.on('cambio', () => { estadoGeneral({ estado, flujo, config }).then((e) => emisor.emitir('estado:cambio', e)).catch((e) => console.error('[estado]', e)); });
+estado.on('cambio', () => { estadoGeneral({ estado, flujo, config, simulador }).then((e) => emisor.emitir('estado:cambio', e)).catch((e) => console.error('[estado]', e)); });
 
 // En modo simulado el ESP32 de mentira entra por el broker, como entraría el real.
-const simulador = config.modoSimulado
-  ? await crearEsp32Simulado({ url: urlMqtt, clientId: `senapark-esp32-simulado-${process.pid}`, usuario: config.mqtt.usuario, clave: config.mqtt.clave, ca: config.mqtt.ca }, { telemetriaMs: 5000 })
-  : undefined;
+simulador = await crearEsp32Simulado(
+  { url: urlMqtt, clientId: `senapark-esp32-simulado-${process.pid}`, usuario: config.mqtt.usuario, clave: config.mqtt.clave, ca: config.mqtt.ca },
+  config.modoSimulado ? { telemetriaMs: 5000 } : { soloSensores: true }, // con el ESP32 real solo simula sensores desde la página
+);
 await simulador?.conectar();
 
 const app = crearApp({ pool, reloj: relojSistema, config, emisor, publicador: cliente, temporizador: temporizadorSistema, estado, flujo, simulador });

@@ -80,9 +80,8 @@ describe('ESP32 simulado', () => {
 
 describe('ruta del simulador', () => {
   const fake = () => { const llamadas: unknown[][] = []; return { llamadas, sim: { poner: async (...a: unknown[]) => { llamadas.push(a); }, acercar: async (cm: number) => { llamadas.push(['distancia', cm]); } } as unknown as Esp32Simulado }; };
-  it('responde 404 si modoSimulado es false', async () => {
-    const { sim } = fake();
-    const r = await request(appPrueba(pool, { simulador: sim })).post('/api/simulador/sensor').send({ sensor: 'entrada', valor: true });
+  it('responde 404 si no hay simulador', async () => {
+    const r = await request(appPrueba(pool)).post('/api/simulador/sensor').send({ sensor: 'entrada', valor: true });
     expect(r.status).toBe(404);
   });
   it('con modoSimulado responde 204, valida el sensor y llama al simulador', async () => {
@@ -95,5 +94,28 @@ describe('ruta del simulador', () => {
     expect((await request(app).post('/api/simulador/distancia').send({ distancia_cm: -4 })).status).toBe(400);
     expect((await request(app).post('/api/simulador/sensor').send({ sensor: 'p01', valor: true })).status).toBe(400);
     expect((await request(app).post('/api/simulador/sensor').send({ sensor: 'laser' })).status).toBe(400);
+  });
+});
+
+describe('ESP32 simulado solo de sensores (con el ESP32 real conectado)', () => {
+  it('no toca el estado en línea, no responde a la barrera y sí publica la distancia', async () => {
+    await esp.desconectar();
+    const e2 = new EstadoHardware(); const bs: unknown[] = [];
+    const b2 = await conectarMqtt({ url, clientId: 'sim-backend-2' });
+    e2.on('barrera', (b) => bs.push(b));
+    await enlazarHardware(b2, e2, () => {});
+    const solo = await crearEsp32Simulado({ url, clientId: 'sim-solo' }, { soloSensores: true });
+    await solo.conectar();
+    await pausa(150);
+    expect(e2.snapshot().esp32Online).toBe(false);
+    await solo.poner('online', true);
+    await solo.acercar(10);
+    await espera(() => e2.snapshot().vehiculoEnEntrada);
+    expect(e2.snapshot().distanciaCm).toBe(10);
+    await b2.publicar('senapark/cmd/barrera', { cmd_id: 'x', accion: 'abrir', expira_en_ms: 5000 });
+    await pausa(200);
+    expect(bs).toHaveLength(0);
+    expect(e2.snapshot().esp32Online).toBe(false);
+    await solo.cerrar(); await b2.cerrar(); await esp.conectar();
   });
 });

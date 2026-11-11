@@ -12,7 +12,11 @@ export interface EstadoHardware {
 }
 export interface Telemetria { rssi: number; uptimeS: number; ip: string | null; heapLibre: number | null; angulo: number | null; }
 export interface AutorizacionActiva { id: number; estado: EstadoAutorizacion; direccion: Direccion; aprendiz: string; placa: string; tipo: string; }
-export interface EstadoGeneral { hardware: EstadoHardware; autorizacionActiva: AutorizacionActiva | null; modoSimulado: boolean; urlPublica: string; }
+export interface Espacio { codigo: string; ocupado: boolean; placa: string | null; tipo: string | null; aprendiz: string | null }
+export interface EstadoGeneral {
+  hardware: EstadoHardware; autorizacionActiva: AutorizacionActiva | null; espacios: Espacio[];
+  modoSimulado: boolean; pruebas: boolean; urlPublica: string;
+}
 export type SensorSimulado = 'online' | 'entrada' | 'cruce';
 export type EstadoAutorizacion =
   | 'CREADA' | 'ESPERANDO_VEHICULO' | 'AUTORIZADA' | 'BARRERA_ABIERTA' | 'CRUZANDO'

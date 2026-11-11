@@ -39,6 +39,12 @@ describe('esquema', () => {
       expect(nombres).toContain(t);
   });
 
+  it('hay seis puestos P01 a P06, todos libres', async () => {
+    const r = await pool.query('SELECT codigo, estado FROM espacios ORDER BY codigo');
+    expect(r.rows.map((x) => x.codigo)).toEqual(['P01', 'P02', 'P03', 'P04', 'P05', 'P06']);
+    expect(r.rows.every((x) => x.estado === 'LIBRE')).toBe(true);
+  });
+
   it('P01 queda sembrado como LIBRE', async () => {
     const r = await pool.query("SELECT estado FROM espacios WHERE codigo='P01'");
     expect(r.rows[0].estado).toBe('LIBRE');

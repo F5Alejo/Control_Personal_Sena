@@ -4,7 +4,7 @@ import type { Reloj } from '../../dominio/contratos.js';
 import type { Direccion, EstadoAutorizacion } from '../../dominio/tipos.js';
 import type { EstadoHardware } from '../../hardware/estado.js';
 import { registrarEvento } from '../../eventos/eventos.repo.js';
-import { accesoActivoDeVehiculo, accesoActivoEnP01 } from '../accesos/accesos.repo.js';
+import { accesoActivoDeVehiculo, espacioLibreId } from '../accesos/accesos.repo.js';
 
 export type MotivoDenegacion =
   | 'APRENDIZ_INACTIVO' | 'VEHICULO_INACTIVO' | 'VEHICULO_NO_PERTENECE' | 'YA_ESTA_DENTRO' | 'NO_ESTA_DENTRO'
@@ -46,7 +46,7 @@ async function validar(c: pg.PoolClient, d: DepsAutorizacion, i: { aprendizId: n
   const propio = await accesoActivoDeVehiculo(c, i.vehiculoId);
   if (i.direccion === 'ENTRADA') {
     if (propio) return 'YA_ESTA_DENTRO';
-    if (await accesoActivoEnP01(c)) return 'ESPACIO_OCUPADO';
+    if ((await espacioLibreId(c)) === null) return 'ESPACIO_OCUPADO';
     return null;
   }
   if (!propio || (propio.estado !== 'DENTRO' && propio.estado !== 'SALIENDO')) return 'NO_ESTA_DENTRO';

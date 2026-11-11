@@ -8,16 +8,16 @@ import { duracionTexto, senal } from '../../core/escena';
   imports: [],
   template: `
     @if (e(); as s) {
-      <div class="bahia" [class.ocupada]="s.hardware.p01Ocupado === true" role="status">
+      <div class="bahia" [class.ocupada]="libres() === 0" role="status">
         <svg class="barrera" viewBox="0 0 120 60" aria-hidden="true" [class.abierta]="s.hardware.barrera === 'abierta'">
           <circle cx="14" cy="46" r="7" /><line class="brazo" x1="14" y1="46" x2="112" y2="46" />
         </svg>
-        <span class="numero">P01</span>
-        <span class="estado">{{ p01() }}</span>
+        <span class="numero">{{ libres() }}</span>
+        <span class="estado">{{ puestosTexto() }}</span>
       </div>
       <dl>
         <div [class.mal]="!s.hardware.esp32Online"><dt>ESP32</dt><dd>{{ s.hardware.esp32Online ? 'En línea' : 'Sin conexión' }}</dd></div>
-        <div><dt>Vehículo en la entrada</dt><dd>{{ s.hardware.vehiculoEnEntrada ? 'Presente' : 'Ninguno' }}</dd></div>
+        <div [class.mal]="!s.hardware.esp32Online"><dt>Vehículo en la entrada</dt><dd>{{ !s.hardware.esp32Online ? 'Sensor sin conexión' : s.hardware.vehiculoEnEntrada ? 'Vehículo presente' : 'Sin vehículo' }}</dd></div>
         <div><dt>Distancia (HC-SR04)</dt><dd>{{ distancia() }}</dd></div>
         <div><dt>Barrera</dt><dd>{{ barrera() }}@if (s.hardware.telemetria?.angulo !== null && s.hardware.telemetria?.angulo !== undefined) { · {{ s.hardware.telemetria!.angulo }}° }</dd></div>
         @if (s.hardware.telemetria; as t) {
@@ -64,8 +64,6 @@ export class EstadoPanelComponent {
   protected senalTexto = senal;
   protected duracion = duracionTexto;
   protected memoria = (b: number) => `${Math.round(b / 1024)} KB`;
-  protected p01 = computed(() => {
-    const s = this.e()!;
-    return s.hardware.p01Ocupado === null ? 'Sin dato' : s.hardware.p01Ocupado ? 'Ocupado' : 'Libre';
-  });
+  protected libres = computed(() => this.e()!.espacios.filter((x) => !x.ocupado).length);
+  protected puestosTexto = computed(() => `de ${this.e()!.espacios.length} puestos libres`);
 }
