@@ -160,7 +160,7 @@ describe('consumirToken', () => {
 describe('rutas', () => {
   it('POST /api/autorizaciones devuelve url con la IP configurada y POST confirmar llama al flujo', async () => {
     const llamadas: number[] = [];
-    const app = appPrueba(pool, { estado, reloj, flujo: { alConfirmarToken: async (id: number) => { llamadas.push(id); } } });
+    const app = appPrueba(pool, { estado, reloj, flujo: { alConfirmarToken: async (id: number) => { llamadas.push(id); } } as never });
     const c = await request(app).post('/api/autorizaciones').send({ aprendizId: a.id, vehiculoId: v.id, direccion: 'ENTRADA' });
     expect(c.status).toBe(201);
     expect(c.body.url).toMatch(/^http:\/\/192\.168\.1\.10:3000\/acceso\/.+/);
