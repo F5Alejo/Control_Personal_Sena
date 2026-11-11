@@ -10,13 +10,22 @@ import { SensorSimulado } from '../../core/modelos';
   imports: [MatButtonModule],
   template: `
     @if (estado()?.modoSimulado) {
-      <h3>Simulador ESP32</h3>
-      <div class="botones">
-        @for (b of botones; track b.t) { <button mat-stroked-button (click)="api.simular(b.s, b.v)">{{ b.t }}</button> }
-      </div>
+      <details open>
+        <summary>Simulador ESP32</summary>
+        <div class="botones">
+          @for (b of botones; track b.t) { <button mat-stroked-button (click)="api.simular(b.s, b.v)">{{ b.t }}</button> }
+        </div>
+      </details>
     }
   `,
-  styles: `.botones { display: flex; gap: 8px; flex-wrap: wrap; }`,
+  styles: `
+    details { border: 1px solid var(--linea); border-radius: 12px; background: var(--superficie); }
+    summary { padding: 14px 18px; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; }
+    summary::-webkit-details-marker { display: none; } summary::after { content: '+'; color: var(--suave); font-size: 20px; line-height: 1; }
+    details[open] summary::after { content: '−'; }
+    .botones { display: flex; gap: 8px; flex-wrap: wrap; padding: 4px 18px 18px; }
+    .botones button { height: 38px; font-size: 13px; }
+  `,
 })
 export class SimuladorComponent {
   protected api = inject(ApiService);

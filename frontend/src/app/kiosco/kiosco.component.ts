@@ -1,6 +1,5 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { TiempoRealService } from '../core/tiempo-real.service';
 import { Seleccion } from '../core/modelos';
 import { EstadoPanelComponent } from './estado-panel/estado-panel.component';
@@ -13,16 +12,14 @@ import { AutorizacionQrComponent } from './autorizacion-qr/autorizacion-qr.compo
 
 @Component({
   selector: 'app-kiosco',
-  imports: [MatToolbarModule, EstadoPanelComponent, BuscarAprendizComponent, RegistroAprendizComponent, AutorizacionQrComponent, HistorialComponent, AccionesComponent, SimuladorComponent],
+  imports: [EstadoPanelComponent, BuscarAprendizComponent, RegistroAprendizComponent, AutorizacionQrComponent, HistorialComponent, AccionesComponent, SimuladorComponent],
   template: `
-    <mat-toolbar>
-      <span>SENA SMART PARK</span>
-      <span class="espacio"></span>
-      <span [class.mal]="!online()">{{ online() ? 'ESP32 en línea' : 'ESP32 sin conexión' }}</span>
-    </mat-toolbar>
+    <header class="barra">
+      <span class="marca"><i></i>SENA SMART PARK</span>
+      <span class="conexion" [class.mal]="!online()"><b></b>{{ online() ? 'ESP32 en línea' : 'ESP32 sin conexión' }}</span>
+    </header>
     <main>
-      <section class="zona"><h2>Estado en vivo</h2><app-estado-panel /></section>
-      <section class="zona">
+      <section class="atencion">
         <h2>Atención del aprendiz</h2>
         @if (seleccion(); as s) {
           <app-autorizacion-qr [seleccion]="s" (reiniciar)="seleccion.set(null)" />
@@ -32,13 +29,32 @@ import { AutorizacionQrComponent } from './autorizacion-qr/autorizacion-qr.compo
           <app-buscar-aprendiz (seleccionado)="seleccion.set($event)" (registrar)="registrando.set($event)" />
         }
       </section>
-      <section class="zona"><h2>Historial</h2><app-acciones /><app-simulador /><app-historial /></section>
+      <aside>
+        <h2 class="sr">Estado en vivo</h2>
+        <app-estado-panel />
+        <div class="controles"><app-acciones /><app-simulador /></div>
+      </aside>
+      <section class="historial"><h2>Historial</h2><app-historial /></section>
     </main>
   `,
   styles: `
-    .espacio { flex: 1; } .mal { color: #ff8a80; font-weight: 700; }
-    main { display: grid; gap: 16px; padding: 16px; grid-template-columns: 1fr; }
-    @media (min-width: 1000px) { main { grid-template-columns: 1fr 1fr; } .zona:last-child { grid-column: 1 / -1; } }
+    :host { display: block; }
+    .barra { display: flex; align-items: center; justify-content: space-between; padding: 18px clamp(16px, 4vw, 48px); }
+    .marca { display: flex; align-items: center; gap: 10px; font: 600 17px var(--titulo); letter-spacing: .02em; }
+    .marca i { width: 14px; height: 14px; border-radius: 4px; background: var(--marca); }
+    .conexion { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--suave); }
+    .conexion b { width: 8px; height: 8px; border-radius: 50%; background: var(--marca); }
+    .conexion.mal { color: var(--alerta); } .conexion.mal b { background: var(--alerta); }
+    main { display: grid; gap: 24px; padding: 8px clamp(16px, 4vw, 48px) 48px; grid-template-columns: 1fr; max-width: 1280px; margin: 0 auto; }
+    .atencion, .historial { background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); padding: 28px; }
+    h2 { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    aside { display: flex; flex-direction: column; gap: 20px; }
+    .controles { display: flex; flex-direction: column; gap: 12px; }
+    @media (min-width: 1000px) {
+      main { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
+      .historial { grid-column: 1 / -1; }
+    }
   `,
 })
 export class KioscoComponent {

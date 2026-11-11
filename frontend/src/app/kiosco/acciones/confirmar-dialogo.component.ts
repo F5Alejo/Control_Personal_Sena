@@ -24,7 +24,7 @@ export interface DatosConfirmar { titulo: string; mensaje: string; pideMotivo?: 
       <button mat-flat-button [mat-dialog-close]="datos.pideMotivo ? motivo().trim() || undefined : true">Confirmar</button>
     </mat-dialog-actions>
   `,
-  styles: `.campo { width: 100%; }`,
+  styles: `.campo { width: 100%; } h2 { font-family: var(--titulo); }`,
 })
 export class ConfirmarDialogoComponent {
   protected datos = inject<DatosConfirmar>(MAT_DIALOG_DATA);

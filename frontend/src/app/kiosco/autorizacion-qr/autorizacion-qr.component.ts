@@ -12,18 +12,28 @@ import { MOTIVOS, TEXTO_ESTADO } from '../../core/textos-estado';
   selector: 'app-autorizacion-qr',
   imports: [MatButtonModule],
   template: `
-    <h2>{{ seleccion().aprendiz.nombre }} · {{ seleccion().vehiculo.placa }} · {{ seleccion().direccion }}</h2>
+    <p class="quien"><b>{{ seleccion().aprendiz.nombre }}</b><span>{{ seleccion().vehiculo.placa }} · {{ seleccion().direccion === 'ENTRADA' ? 'Entrada' : 'Salida' }}</span></p>
     @if (error()) {
       <p class="error">{{ error() }}</p>
       <button mat-flat-button (click)="reiniciar.emit()">Volver a empezar</button>
     } @else if (qr()) {
-      <img [src]="qr()" alt="Código QR de acceso" width="320" height="320" />
-      @if (restante() > 0) { <p>Vence en {{ restante() }} s</p> } @else { <p>El código venció</p> }
+      <div class="qr"><img [src]="qr()" alt="Código QR de acceso" width="300" height="300" /></div>
+      @if (restante() > 0) { <p class="vence">Vence en {{ restante() }} s</p> } @else { <p class="vence">El código venció</p> }
+      <div class="barra" aria-hidden="true"><i [style.width.%]="porcentaje()"></i></div>
       <p class="estado">{{ texto() }}</p>
       <button mat-button (click)="reiniciar.emit()">Cerrar</button>
-    } @else { <p>Generando…</p> }
+    } @else { <p class="vence">Generando…</p> }
   `,
-  styles: `.error { color: #c62828; font-size: 20px; } .estado { font-size: 22px; font-weight: 600; } img { max-width: 100%; height: auto; }`,
+  styles: `
+    :host { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .quien { display: flex; flex-direction: column; margin: 0 0 24px; } .quien b { font: 600 26px var(--titulo); } .quien span { color: var(--suave); letter-spacing: .04em; }
+    .qr { padding: 20px; background: #fff; border: 1px solid var(--linea); border-radius: 20px; } img { display: block; max-width: 100%; height: auto; }
+    .vence { margin: 20px 0 8px; color: var(--suave); font-variant-numeric: tabular-nums; }
+    .barra { width: 100%; max-width: 340px; height: 4px; border-radius: 2px; background: var(--linea); overflow: hidden; }
+    .barra i { display: block; height: 100%; background: var(--marca); transition: width 1s linear; }
+    .estado { margin: 24px 0 8px; font: 600 24px/1.2 var(--titulo); }
+    .error { color: var(--alerta); font-size: 20px; }
+  `,
 })
 export class AutorizacionQrComponent {
   private api = inject(ApiService);
@@ -35,6 +45,8 @@ export class AutorizacionQrComponent {
   protected qr = signal('');
   protected error = signal('');
   protected restante = signal(0);
+  private total = 60;
+  protected porcentaje = () => Math.min(100, (this.restante() / this.total) * 100);
   protected texto = signal(TEXTO_ESTADO.CREADA);
   private autorizacionId: number | null = null;
   private tick: ReturnType<typeof setInterval> | null = null;
@@ -55,7 +67,8 @@ export class AutorizacionQrComponent {
       this.qr.set(await this.qrs.generar(r.url));
       const fin = new Date(r.expiraEn).getTime();
       const calc = () => Math.max(0, Math.ceil((fin - Date.now()) / 1000));
-      this.restante.set(calc());
+      this.total = Math.max(1, calc());
+      this.restante.set(this.total);
       this.tick = setInterval(() => { this.restante.set(calc()); if (!this.restante()) clearInterval(this.tick!); }, 1000);
     } catch (e) {
       const motivo = e instanceof HttpErrorResponse ? e.error?.motivo : undefined;

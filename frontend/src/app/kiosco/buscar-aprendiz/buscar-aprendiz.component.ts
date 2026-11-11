@@ -1,6 +1,5 @@
 import { Component, inject, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ApiService } from '../../core/api.service';
@@ -8,42 +7,55 @@ import { BusquedaAprendiz, Direccion, Seleccion, Vehiculo } from '../../core/mod
 
 @Component({
   selector: 'app-buscar-aprendiz',
-  imports: [MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],
+  imports: [MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
-    <mat-form-field appearance="outline" class="campo">
-      <mat-label>Cédula del aprendiz</mat-label>
-      <input matInput inputmode="numeric" autocomplete="off" [value]="cedula()"
-             (input)="cedula.set($any($event.target).value)" (keydown.enter)="buscar()" />
-    </mat-form-field>
-    <button mat-flat-button (click)="buscar()" [disabled]="cargando()">Buscar</button>
+    <div class="busqueda">
+      <mat-form-field appearance="outline" class="campo">
+        <mat-label>Cédula del aprendiz</mat-label>
+        <input matInput inputmode="numeric" autocomplete="off" [value]="cedula()"
+               (input)="cedula.set($any($event.target).value)" (keydown.enter)="buscar()" />
+      </mat-form-field>
+      <button mat-flat-button (click)="buscar()" [disabled]="cargando()">Buscar</button>
+    </div>
 
     @if (error()) { <p class="error">{{ error() }}</p> }
     @if (busqueda(); as b) {
-      <mat-card><mat-card-content>
-        <h2>{{ b.aprendiz.nombre }}</h2>
-        <p>Ficha {{ b.aprendiz.ficha ?? '—' }} · {{ b.aprendiz.programa ?? '—' }}</p>
-        @if (!b.vehiculos.length) { <p>Sin vehículos registrados.</p> }
+      <article>
+        <h3>{{ b.aprendiz.nombre }}</h3>
+        <p class="meta">Ficha {{ b.aprendiz.ficha ?? '—' }} · {{ b.aprendiz.programa ?? '—' }}</p>
+        @if (!b.vehiculos.length) { <p class="meta">Sin vehículos registrados.</p> }
         <div class="vehiculos">
           @for (v of b.vehiculos; track v.id) {
-            <button mat-stroked-button data-vehiculo [class.activo]="elegido()?.id === v.id" (click)="elegido.set(v)">
-              {{ v.placa }} · {{ v.tipo }}
+            <button type="button" data-vehiculo class="ficha" [class.activo]="elegido()?.id === v.id" (click)="elegido.set(v)">
+              <b>{{ v.placa }}</b><span>{{ v.tipo }}</span>
             </button>
           }
         </div>
         <div class="acciones">
           <button mat-flat-button (click)="emitir('ENTRADA')">Entrada</button>
-          <button mat-flat-button (click)="emitir('SALIDA')">Salida</button>
+          <button mat-stroked-button (click)="emitir('SALIDA')">Salida</button>
         </div>
-      </mat-card-content></mat-card>
+      </article>
     }
     @if (noExiste()) {
-      <p>No hay un aprendiz con esa cédula.</p>
+      <p class="meta">No hay un aprendiz con esa cédula.</p>
       <button mat-flat-button (click)="registrar.emit(cedula().trim())">Registrar aprendiz</button>
     }
   `,
   styles: `
-    .campo { width: 100%; } .vehiculos, .acciones { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
-    .activo { background: #c8e6c9; } .error { color: #c62828; }
+    .busqueda { display: flex; gap: 12px; align-items: flex-start; } .campo { flex: 1; }
+    .busqueda button { margin-top: 4px; min-width: 110px; }
+    article { margin-top: 12px; padding-top: 24px; border-top: 1px solid var(--linea); }
+    h3 { font-size: 30px; font-weight: 600; line-height: 1.1; } .meta { color: var(--suave); margin: 6px 0 0; }
+    .vehiculos { display: flex; gap: 10px; flex-wrap: wrap; margin: 24px 0; }
+    .ficha { font: inherit; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 18px; min-width: 120px;
+      background: var(--superficie); color: var(--tinta); border: 1.5px solid var(--linea); border-radius: 12px; cursor: pointer; transition: border-color .15s, background-color .15s; }
+    .ficha b { font: 600 20px var(--titulo); letter-spacing: .04em; } .ficha span { font-size: 13px; color: var(--suave); }
+    .ficha:hover { border-color: #b9c2bb; }
+    .ficha.activo { border-color: var(--marca-oscura); background: var(--marca-tenue); }
+    .acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .acciones button { height: 56px; font-size: 17px; }
+    .error { color: var(--alerta); }
   `,
 })
 export class BuscarAprendizComponent {

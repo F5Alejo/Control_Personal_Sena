@@ -9,19 +9,28 @@ import { ApiService } from '../../core/api.service';
   imports: [MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <form (submit)="guardar($event)">
-      <h2>Registrar aprendiz</h2>
+      <h3>Registrar aprendiz</h3>
+      <div class="rejilla">
       @for (c of campos; track c.n) {
         <mat-form-field appearance="outline" class="campo">
           <mat-label>{{ c.t }}</mat-label>
           <input matInput [name]="c.n" [value]="datos()[c.n] ?? (c.n === 'cedula' ? cedulaInicial() : '')" (input)="poner(c.n, $any($event.target).value)" />
         </mat-form-field>
       }
+      </div>
       @if (error()) { <p class="error">{{ error() }}</p> }
-      <button mat-flat-button type="submit" [disabled]="guardando()">Guardar</button>
-      <button mat-button type="button" (click)="cancelado.emit()">Cancelar</button>
+      <div class="pie">
+        <button mat-flat-button type="submit" [disabled]="guardando()">Guardar</button>
+        <button mat-button type="button" (click)="cancelado.emit()">Cancelar</button>
+      </div>
     </form>
   `,
-  styles: `.campo { width: 100%; } .error { color: #c62828; }`,
+  styles: `
+    h3 { font-size: 24px; font-weight: 600; margin-bottom: 20px; }
+    .rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+    .campo { width: 100%; } .error { color: var(--alerta); } .pie { display: flex; gap: 8px; margin-top: 8px; }
+    @media (max-width: 560px) { .rejilla { grid-template-columns: 1fr; } }
+  `,
 })
 export class RegistroAprendizComponent {
   private api = inject(ApiService);

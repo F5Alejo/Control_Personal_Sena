@@ -1,39 +1,61 @@
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
+@use '@fontsource-variable/bricolage-grotesque';
+@use '@fontsource-variable/instrument-sans';
 
 html {
   height: 100%;
-  @include mat.theme(
-    (
-      color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
-      ),
-      typography: Roboto,
-      density: 0,
-    )
-  );
+  @include mat.theme((
+    color: (primary: mat.$green-palette, tertiary: mat.$green-palette),
+    typography: (plain-family: 'Instrument Sans Variable, system-ui, sans-serif',
+                 brand-family: 'Bricolage Grotesque Variable, system-ui, sans-serif'),
+    density: 0,
+  ));
+}
+
+:root {
+  color-scheme: light;
+  --fondo: #f1f4f0;
+  --superficie: #ffffff;
+  --tinta: #16211a;
+  --suave: #5c685f;
+  --linea: #dde3de;
+  --marca: #39a900;
+  --marca-oscura: #1e6a00;
+  --marca-tenue: #e9f4e1;
+  --alerta: #b3261e;
+  --alerta-tenue: #fbeceb;
+  --aviso: #94590a;
+  --aviso-tenue: #fbf1e0;
+  --titulo: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --radio: 16px;
+
+  --mat-sys-primary: var(--marca-oscura);
+  --mat-sys-on-primary: #fff;
+  --mat-sys-surface: var(--superficie);
+  --mat-sys-on-surface: var(--tinta);
+  --mat-sys-outline: #b9c2bb;
+  --mat-sys-outline-variant: var(--linea);
+  --mat-button-filled-container-shape: 12px;
+  --mat-button-outlined-container-shape: 12px;
+  --mat-button-text-container-shape: 12px;
+  --mat-button-filled-container-height: 46px;
+  --mat-button-outlined-container-height: 46px;
+  --mat-dialog-container-shape: 20px;
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
-  color-scheme: light;
-
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
-
-  // Reset the user agent margin.
   margin: 0;
-  height: 100%;
+  min-height: 100%;
+  background: var(--fondo);
+  color: var(--tinta);
+  font: 400 15px/1.5 'Instrument Sans Variable', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
-/* You can add global styles to this file, and also import other style files */
+
+h1, h2, h3 { font-family: var(--titulo); margin: 0; letter-spacing: -.01em; }
+
+:focus-visible { outline: 2px solid var(--marca-oscura); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

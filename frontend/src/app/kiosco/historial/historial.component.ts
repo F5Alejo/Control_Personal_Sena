@@ -33,7 +33,7 @@ export function formatearPermanencia(seg: number | null): string {
           <tr><th>Aprendiz</th><th>Placa</th><th>Entrada</th><th>Salida</th><th>Permanencia</th><th>Estado</th></tr>
           @for (a of accesos(); track a.id) {
             <tr><td>{{ a.aprendizNombre }}</td><td>{{ a.placa }}</td><td>{{ a.entradaEn | date: 'dd/MM HH:mm:ss' }}</td>
-              <td>{{ a.salidaEn ? (a.salidaEn | date: 'dd/MM HH:mm:ss') : '—' }}</td><td>{{ perm(a) }}</td><td>{{ a.estado }}</td></tr>
+              <td>{{ a.salidaEn ? (a.salidaEn | date: 'dd/MM HH:mm:ss') : '—' }}</td><td>{{ perm(a) }}</td><td><span class="pill" [attr.data-estado]="a.estado">{{ a.estado }}</span></td></tr>
           }
         </table></div>
       <h3>Eventos</h3>
@@ -46,7 +46,19 @@ export function formatearPermanencia(seg: number | null): string {
           }
         </table></div>
   `,
-  styles: `.tabla { max-height: 260px; overflow: auto; } table { width: 100%; border-collapse: collapse; } td, th { padding: 6px 8px; text-align: left; } .inconsistencia { background: #ffebee; font-weight: 600; }`,
+  styles: `
+    h3 { font-size: 15px; font-weight: 600; margin: 4px 0 8px; } h3:not(:first-child) { margin-top: 28px; }
+    .tabla { max-height: 280px; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th { position: sticky; top: 0; background: var(--superficie); color: var(--suave); font-weight: 500; font-size: 13px; }
+    td, th { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--linea); white-space: nowrap; }
+    td:last-child { white-space: normal; }
+    tr.inconsistencia td { background: var(--aviso-tenue); color: var(--aviso); font-weight: 500; }
+    tr.inconsistencia td:first-child { box-shadow: inset 3px 0 var(--aviso); }
+    .pill { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--linea); }
+    .pill[data-estado='DENTRO'] { background: var(--marca-tenue); color: var(--marca-oscura); }
+    .pill[data-estado='ANULADO'] { background: var(--alerta-tenue); color: var(--alerta); }
+  `,
 })
 export class HistorialComponent {
   private api = inject(ApiService);

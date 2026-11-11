@@ -11,10 +11,10 @@ import { ConfirmarDialogoComponent, DatosConfirmar } from './confirmar-dialogo.c
   imports: [MatButtonModule],
   template: `
     <button mat-stroked-button (click)="abrirManual()">Apertura manual</button>
-    <button mat-stroked-button (click)="reiniciar()">Reiniciar demo</button>
-    @if (mensaje()) { <span class="msg">{{ mensaje() }}</span> }
+    <button mat-button (click)="reiniciar()">Reiniciar demo</button>
+    @if (mensaje()) { <span class="msg" role="status">{{ mensaje() }}</span> }
   `,
-  styles: `:host { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .msg { font-weight: 600; }`,
+  styles: `:host { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .msg { color: var(--suave); font-size: 14px; }`,
 })
 export class AccionesComponent {
   private api = inject(ApiService);
