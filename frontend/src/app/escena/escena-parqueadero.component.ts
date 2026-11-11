@@ -31,13 +31,13 @@ import { VehiculoComponent } from './vehiculo.component';
         @if (hayAprox()) {
           <div class="veh aprox" [style.left.%]="aproxIzq()"><app-vehiculo [moto]="false" style="--color:#8aa092" /></div>
         }
-        <div class="medidor" [class.activo]="hayAprox()" role="status">
-          <span class="etq">HC-SR04</span>
-          <span class="valor">{{ distanciaTexto() }}</span>
-          <strong class="presencia" [class.si]="presente()">{{ presenciaTexto() }}</strong>
-          <i><b [style.width.%]="aprox() * 100"></b></i>
-        </div>
         <span class="rotulo entrada">Entrada</span>
+      </div>
+      <div class="medidor" [class.activo]="presente()" role="status">
+        <div><span class="etq">Sensor HC-SR04</span><span class="valor">{{ distanciaTexto() }}</span>
+          <i><b [style.width.%]="aprox() * 100"></b></i></div>
+        <div><span class="etq">Vehículo en la barrera</span><strong class="presencia" [class.si]="presente()">{{ presenciaTexto() }}</strong></div>
+        <div><span class="etq">Barrera</span><span class="valor">{{ barreraAbierta() ? 'Abierta' : 'Cerrada' }}</span></div>
       </div>
       <figcaption>
         <span class="estado" role="status" aria-live="polite">{{ mensaje() }}</span>
@@ -58,7 +58,7 @@ import { VehiculoComponent } from './vehiculo.component';
     .placa-puesto { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font: 700 clamp(8px, 1vw, 11px) var(--titulo); letter-spacing: .04em; }
     .via { position: absolute; left: 0; right: 0; top: 56%; height: 36%; background: #2b352d; }
     .via i { position: absolute; left: 0; right: 0; top: 50%; border-top: 3px dashed rgba(255,255,255,.35); }
-    .rotulo { position: absolute; left: 10px; bottom: 6px; font-size: 12px; color: rgba(255,255,255,.7); }
+    .rotulo { position: absolute; left: 12px; top: 60%; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.75); }
     .barrera { position: absolute; left: 22%; top: 46%; width: 2.2%; height: 46%; }
     .barrera .poste { position: absolute; left: 0; top: 0; width: 100%; height: 14%; background: var(--tinta); border-radius: 3px; }
     .barrera .brazo { position: absolute; left: 30%; top: 4%; width: 40%; height: 92%; background: repeating-linear-gradient(0deg, #fff 0 8px, var(--marca) 8px 16px); border-radius: 3px; transform-origin: top; transition: transform .7s cubic-bezier(.3,.7,.2,1); }
@@ -72,15 +72,16 @@ import { VehiculoComponent } from './vehiculo.component';
     .lugar-dentro app-vehiculo { transform: rotate(-90deg); transition: transform .5s ease 1.2s; }
     .lugar-puerta app-vehiculo, .lugar-afuera app-vehiculo { transform: none; transition: transform .4s; }
     .aprox { top: 74%; opacity: .75; transition: left .5s linear; }
-    .medidor { position: absolute; left: 26%; bottom: 8px; display: grid; grid-template-columns: auto auto; gap: 2px 8px; align-items: center; padding: 5px 9px;
-      border-radius: 8px; background: rgba(0,0,0,.45); color: rgba(255,255,255,.75); font-size: 12px; }
-    .medidor.activo { background: var(--marca-oscura); color: #fff; }
-    .medidor .valor { font: 700 13px var(--titulo); text-align: right; }
-    .medidor .presencia { grid-column: 1 / -1; font-size: 12px; }
-    .medidor .presencia.si { color: #ffd966; }
-    .medidor i { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); overflow: hidden; }
-    .medidor b { display: block; height: 100%; background: #8fd467; transition: width .4s; }
-    figcaption { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
+    .medidor { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 12px; border: 1px solid var(--linea); border-radius: 12px; background: var(--linea); overflow: hidden; }
+    .medidor > div { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; background: var(--superficie); min-width: 0; }
+    .medidor .etq { font-size: 12px; color: var(--suave); }
+    .medidor .valor, .medidor .presencia { font: 600 17px var(--titulo); }
+    .medidor .presencia { color: var(--suave); }
+    .medidor .presencia.si { color: var(--marca-oscura); }
+    .medidor i { height: 4px; border-radius: 2px; background: var(--linea); overflow: hidden; }
+    .medidor b { display: block; height: 100%; background: var(--marca); transition: width .4s; }
+    @media (max-width: 560px) { .medidor { grid-template-columns: 1fr; } }
+    figcaption { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; }
     .estado { font-size: 17px; font-weight: 600; } .nota { font-size: 13px; color: var(--suave); }
   `,
 })
@@ -123,7 +124,7 @@ export class EscenaParqueaderoComponent {
     const a = e.autorizacionActiva;
     if (a) return `${a.direccion === 'ENTRADA' ? 'Entrada' : 'Salida'} de ${a.aprendiz}: ${TEXTO_ESTADO[a.estado]}`;
     if (e.hardware.vehiculoEnEntrada) return 'Vehículo frente a la barrera: ya puede escanear el QR';
-    return this.resumen() ? `Listo para una entrada · ${this.resumen()}` : 'Listo para una entrada';
+    return 'Listo para una entrada';
   });
   protected descripcion = computed(() => `Parqueadero con ${this.estado()?.espacios.length ?? 0} puestos. ${this.mensaje()}`);
 }

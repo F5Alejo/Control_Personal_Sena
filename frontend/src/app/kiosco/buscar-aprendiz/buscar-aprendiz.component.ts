@@ -44,8 +44,8 @@ import { BusquedaAprendiz, Direccion, Seleccion, Vehiculo } from '../../core/mod
     }
   `,
   styles: `
-    .busqueda { display: flex; gap: 12px; align-items: flex-start; } .campo { flex: 1; }
-    .busqueda button { margin-top: 4px; min-width: 110px; white-space: nowrap; }
+    .busqueda { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; } .campo { flex: 1 1 100%; }
+    .busqueda button { flex: 1; height: 52px; min-width: 110px; white-space: nowrap; }
     article { margin-top: 12px; padding-top: 24px; border-top: 1px solid var(--linea); }
     h3 { font-size: 30px; font-weight: 600; line-height: 1.1; } .meta { color: var(--suave); margin: 6px 0 0; }
     .vehiculos { display: flex; gap: 10px; flex-wrap: wrap; margin: 24px 0; }
