@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
-  Aprendiz, AutorizacionCreada, BusquedaAprendiz, ConfirmacionAcceso, EstadoGeneral,
+  AccesoFila, EventoFila, Aprendiz, AutorizacionCreada, BusquedaAprendiz, ConfirmacionAcceso, EstadoGeneral,
   NuevaAutorizacion, SensorSimulado, Vehiculo,
 } from './modelos';
 
@@ -31,8 +31,8 @@ export class ApiService {
     return firstValueFrom(this.http.post<ConfirmacionAcceso>(`/api/acceso/${encodeURIComponent(token)}/confirmar`, {}));
   }
   estado() { return firstValueFrom(this.http.get<EstadoGeneral>('/api/estado')); }
-  accesos(limite?: number) { return firstValueFrom(this.http.get<unknown[]>('/api/accesos', { params: this.limite(limite) })); }
-  eventos(limite?: number) { return firstValueFrom(this.http.get<unknown[]>('/api/eventos', { params: this.limite(limite) })); }
+  accesos(limite?: number) { return firstValueFrom(this.http.get<AccesoFila[]>('/api/accesos', { params: this.limite(limite) })); }
+  eventos(limite?: number) { return firstValueFrom(this.http.get<EventoFila[]>('/api/eventos', { params: this.limite(limite) })); }
   aperturaManual(motivo: string) { return firstValueFrom(this.http.post<void>('/api/barrera/abrir-manual', { motivo })); }
   reiniciarDemo() { return firstValueFrom(this.http.post<void>('/api/demo/reiniciar', {})); }
   simular(sensor: SensorSimulado, valor?: boolean) {

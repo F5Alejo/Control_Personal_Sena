@@ -17,3 +17,5 @@ export type EstadoAutorizacion =
   | 'FINALIZADA' | 'DENEGADA' | 'EXPIRADA' | 'TIEMPO_AGOTADO' | 'ERROR_MQTT' | 'ERROR_SENSOR';
 export interface CambioAutorizacion { autorizacionId: number; estado: EstadoAutorizacion; direccion: Direccion; motivo?: string; }
 export interface Seleccion { aprendiz: Aprendiz; vehiculo: Vehiculo; direccion: Direccion; }
+export interface AccesoFila { id: number; estado: string; entradaEn: string; salidaEn: string | null; aprendizNombre: string; placa: string; }
+export interface EventoFila { id: number; tipo: string; detalle: Record<string, unknown>; fecha: string; }

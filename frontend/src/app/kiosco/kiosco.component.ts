@@ -6,11 +6,14 @@ import { Seleccion } from '../core/modelos';
 import { EstadoPanelComponent } from './estado-panel/estado-panel.component';
 import { BuscarAprendizComponent } from './buscar-aprendiz/buscar-aprendiz.component';
 import { RegistroAprendizComponent } from './registro-aprendiz/registro-aprendiz.component';
+import { HistorialComponent } from './historial/historial.component';
+import { AccionesComponent } from './acciones/acciones.component';
+import { SimuladorComponent } from './simulador/simulador.component';
 import { AutorizacionQrComponent } from './autorizacion-qr/autorizacion-qr.component';
 
 @Component({
   selector: 'app-kiosco',
-  imports: [MatToolbarModule, EstadoPanelComponent, BuscarAprendizComponent, RegistroAprendizComponent, AutorizacionQrComponent],
+  imports: [MatToolbarModule, EstadoPanelComponent, BuscarAprendizComponent, RegistroAprendizComponent, AutorizacionQrComponent, HistorialComponent, AccionesComponent, SimuladorComponent],
   template: `
     <mat-toolbar>
       <span>SENA SMART PARK</span>
@@ -29,7 +32,7 @@ import { AutorizacionQrComponent } from './autorizacion-qr/autorizacion-qr.compo
           <app-buscar-aprendiz (seleccionado)="seleccion.set($event)" (registrar)="registrando.set($event)" />
         }
       </section>
-      <section class="zona"><h2>Historial</h2></section>
+      <section class="zona"><h2>Historial</h2><app-acciones /><app-simulador /><app-historial /></section>
     </main>
   `,
   styles: `
