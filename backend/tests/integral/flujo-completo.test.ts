@@ -16,7 +16,7 @@ const pool = crearPoolPrueba();
 let broker: { cerrar(): Promise<void> }; let backend: ClienteMqtt; let esp: Esp32Simulado;
 let estado: EstadoHardware; let flujo: FlujoAcceso; let reloj: RelojFalso; let temp: TemporizadorManual;
 let app: ReturnType<typeof crearApp>;
-const config = cargarConfig({ PUBLIC_URL: 'http://192.168.1.10:3000' } as NodeJS.ProcessEnv);
+const config = cargarConfig({ PUBLIC_URL: 'http://192.168.1.10:3000', BARRERA_ABIERTA_MS: '0' } as NodeJS.ProcessEnv);
 
 const espera = (f: () => boolean | Promise<boolean>, ms = 4000) => new Promise<void>((ok, ko) => {
   const t0 = Date.now();

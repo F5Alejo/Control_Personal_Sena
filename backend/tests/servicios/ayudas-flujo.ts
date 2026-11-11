@@ -7,12 +7,12 @@ import { crearVehiculo } from '../../src/modulos/vehiculos/vehiculos.repo.js';
 import { consumirToken, crearAutorizacion } from '../../src/modulos/autorizaciones/autorizaciones.servicio.js';
 import { EmisorFalso, PublicadorFalso, RelojFalso, TemporizadorManual } from '../ayudas/falsos.js';
 
-export async function montarFlujo(pool: pg.Pool) {
+export async function montarFlujo(pool: pg.Pool, env: Record<string, string> = {}) {
   const reloj = new RelojFalso(); const estado = new EstadoHardware(); const pub = new PublicadorFalso();
   const emisor = new EmisorFalso(); const temp = new TemporizadorManual();
   estado.aplicar({ tipo: 'online', valor: true });
   let n = 0;
-  const flujo = new FlujoAcceso({ pool, reloj, estado, publicador: pub, emisor, temporizador: temp, tiempos: cargarConfig({} as NodeJS.ProcessEnv).tiempos, idComando: () => `cmd-${++n}` });
+  const flujo = new FlujoAcceso({ pool, reloj, estado, publicador: pub, emisor, temporizador: temp, tiempos: cargarConfig({ BARRERA_ABIERTA_MS: '0', ESTACIONAR_MS: '3000', ...env } as NodeJS.ProcessEnv).tiempos, idComando: () => `cmd-${++n}` });
   flujo.iniciar();
   const a = await crearAprendiz(pool, { cedula: '1', nombre: 'Fabio Zorro' });
   const v = await crearVehiculo(pool, a.id, { placa: 'ABC123', tipo: 'CARRO' });

@@ -3,7 +3,9 @@ import { cargarConfig } from '../../src/config/env.js';
 
 describe('cargarConfig: tiempos', () => {
   it('da por estacionado o ido al vehículo a los 3 s del cruce', () => {
-    expect(cargarConfig({}).tiempos.estacionarMs).toBe(3000);
+    expect(cargarConfig({}).tiempos.estacionarMs).toBe(6000);
+    expect(cargarConfig({}).tiempos.abiertaMs).toBe(10000);
+    expect(cargarConfig({ BARRERA_ABIERTA_MS: '0' }).tiempos.abiertaMs).toBe(0);
     expect(cargarConfig({}).tiempos.confirmaP01Ms).toBe(15000);
     expect(cargarConfig({ CONFIRMA_P01_MS: '8000' }).tiempos.confirmaP01Ms).toBe(8000);
     expect(cargarConfig({ ESTACIONAR_MS: '5000' }).tiempos.estacionarMs).toBe(5000);

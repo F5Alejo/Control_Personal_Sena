@@ -219,12 +219,25 @@ export class FlujoAcceso {
 
   private async alBarrera(b: { estado: string; cmdId?: string }): Promise<void> {
     const c = this.actual;
-    if (c && c.estado === 'AUTORIZADA' && b.estado === 'abierta' && b.cmdId === c.cmdAbrir) await this.transicion(c, 'BARRERA_ABIERTA');
+    if (!(c && c.estado === 'AUTORIZADA' && b.estado === 'abierta' && b.cmdId === c.cmdAbrir)) return;
+    await this.transicion(c, 'BARRERA_ABIERTA');
+    // Maqueta: la puerta queda abierta un tiempo fijo y luego se cierra sola, haya o no visto el cruce el HC-SR04.
+    if (this.d.tiempos.abiertaMs > 0) this.programar(c, this.d.tiempos.abiertaMs, () => this.cerrarPorTiempo(c));
+  }
+
+  private async cerrarPorTiempo(c: Contexto): Promise<void> {
+    if (this.actual !== c || c.estado !== 'BARRERA_ABIERTA') return;
+    await this.cerrarYEstacionar(c);
   }
 
   private async alCruce(): Promise<void> {
     const c = this.actual;
     if (!c || c.estado !== 'BARRERA_ABIERTA') return;
+    if (this.d.tiempos.abiertaMs > 0) return; // con tiempo fijo de apertura, el cierre lo decide el temporizador
+    await this.cerrarYEstacionar(c);
+  }
+
+  private async cerrarYEstacionar(c: Contexto): Promise<void> {
     await this.transicion(c, 'CRUZANDO');
     await this.publicar(TOPICS.cmdBarrera, this.comandoBarrera('cerrar'));
     // Sin sensor en P01: el cruce confirmado por el HC-SR04 cuenta, y pasado un momento el vehículo se da por estacionado o ido.

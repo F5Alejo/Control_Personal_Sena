@@ -121,6 +121,37 @@ describe('flujo de entrada', () => {
     expect(s.pub.de('senapark/cmd/lcd').at(-1)!.payload).toEqual({ linea1: 'Fabio Zorro', linea2: 'Acerque el carro' });
   });
 
+  describe('ritmo de la maqueta (barrera abierta un tiempo fijo)', () => {
+    beforeEach(async () => { await limpiarTablas(pool); s = await montarFlujo(pool, { BARRERA_ABIERTA_MS: '10000', ESTACIONAR_MS: '6000', CONFIRMA_P01_MS: '15000' }); });
+    const abrir = async () => { await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true }); await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: 'cmd-1' }); };
+    it('la barrera abre al validar el QR y sigue abierta aunque el HC-SR04 vea el cruce', async () => {
+      await abrir();
+      await s.hw({ tipo: 'cruce' });
+      expect(await s.estadoAut()).toBe('BARRERA_ABIERTA');
+      expect(barrera(s).map((m: any) => m.accion)).toEqual(['abrir']);
+    });
+    it('a los 10 s se cierra sola, y a los 6 s más queda DENTRO', async () => {
+      await abrir();
+      await s.avanzar(9999);
+      expect(await s.estadoAut()).toBe('BARRERA_ABIERTA');
+      await s.avanzar(1);
+      expect(await s.estadoAut()).toBe('CRUZANDO');
+      expect(barrera(s).map((m: any) => m.accion)).toEqual(['abrir', 'cerrar']);
+      await s.avanzar(5999);
+      expect((await s.acceso()).estado).toBe('ENTRANDO');
+      await s.avanzar(1);
+      expect((await s.acceso()).estado).toBe('DENTRO');
+    });
+    it('el infrarrojo confirma 15 s después de registrar la entrada', async () => {
+      await abrir(); await s.avanzar(10000); await s.avanzar(6000);
+      await s.hw({ tipo: 'p01', ocupado: true });
+      await s.avanzar(14999);
+      expect(await s.eventos('ENTRADA_CONFIRMADA')).toHaveLength(0);
+      await s.avanzar(1);
+      expect(await s.eventos('ENTRADA_CONFIRMADA')).toHaveLength(1);
+    });
+  });
+
   describe('P01 reservado para el hardware', () => {
     it('una entrada simulada (modo prueba con el ESP32 real) no toma P01', async () => {
       await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true, simulado: true });
