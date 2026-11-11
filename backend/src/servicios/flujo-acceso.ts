@@ -30,12 +30,15 @@ export class FlujoAcceso {
   private actual: Contexto | null = null;
   private cola: Promise<unknown> = Promise.resolve();
   private pendientes = 0;
+  /** El sensor de P01 vio movimiento desde que empezó el acceso en curso (el PIR no ve vehículos quietos). */
+  private movimientoP01 = false;
   private ultimaAperturaTactil = -Infinity;
 
   constructor(private d: DepsFlujo) {}
 
   iniciar(): void {
     const { estado } = this.d;
+    estado.on('p01', (movimiento: boolean) => { if (movimiento) this.movimientoP01 = true; });
     estado.on('entrada', (presente: boolean) => { if (presente) this.encolar(() => this.alVehiculoPresente()); });
     estado.on('barrera', (b: { estado: string; cmdId?: string }) => this.encolar(() => this.alBarrera(b)));
     estado.on('cruce', () => this.encolar(() => this.alCruce()));
@@ -185,6 +188,7 @@ export class FlujoAcceso {
   // ---------- reglas de entrada ----------
   private async autorizar(ctx: Contexto): Promise<void> {
     ctx.cancelar?.(); ctx.cancelar = null;
+    this.movimientoP01 = false; // el movimiento que cuenta es el que ocurre durante este acceso
     if (ctx.direccion === 'ENTRADA') {
       // Con el ESP32 real conectado, el carro de prueba (simulado) deja P01 para el del hardware.
       const espacioId = await espacioLibreId(this.d.pool, { sinP01: this.d.estado.entradaSimulada });
@@ -262,23 +266,25 @@ export class FlujoAcceso {
   }
 
   /**
-   * El infrarrojo solo vigila P01. Si el acceso es de P01, tras `confirmaP01Ms` se compara lo registrado con lo que
-   * ve el sensor: una entrada sin vehículo en P01 (o una salida con vehículo todavía allí) queda marcada como alerta.
+   * El sensor de movimiento (PIR) solo vigila P01 y no ve vehículos quietos: lo que confirma es que hubo movimiento
+   * en el puesto durante el acceso. Tras `confirmaP01Ms`, una entrada sin movimiento queda marcada como alerta
+   * (el vehículo pudo irse a otro lado); en la salida, sin movimiento tampoco se pudo confirmar que el vehículo salió.
    */
   private async vigilarP01(c: Contexto, entra: boolean): Promise<void> {
     const r = await this.d.pool.query('SELECT e.codigo FROM accesos a JOIN espacios e ON e.id = a.espacio_id WHERE a.id = $1', [c.accesoId]);
     if (r.rows[0]?.codigo !== 'P01') return;
     const datos = { accesoId: c.accesoId, aprendiz: c.aprendiz, placa: c.placa };
     this.d.estado.fijarAlertaP01(null);
+    this.d.estado.fijarConfirmadoP01(entra ? false : null);
     this.d.temporizador.programar(this.d.tiempos.confirmaP01Ms, () => void this.encolar(async () => {
-      const visto = this.d.estado.snapshot().p01Sensor === true;
+      const visto = this.movimientoP01 || this.d.estado.snapshot().p01Sensor === true;
       if (entra) {
-        if (visto) { await this.evento('ENTRADA_CONFIRMADA', datos); return; }
+        if (visto) { this.d.estado.fijarConfirmadoP01(true); await this.evento('ENTRADA_CONFIRMADA', datos); return; }
         this.d.estado.fijarAlertaP01('ENTRADA_NO_CONFIRMADA');
-        await this.evento('ENTRADA_NO_CONFIRMADA', { ...datos, motivo: 'El sensor de P01 no detectó el vehículo' });
-      } else if (visto) {
+        await this.evento('ENTRADA_NO_CONFIRMADA', { ...datos, motivo: 'El sensor de P01 no detectó movimiento' });
+      } else if (!visto) {
         this.d.estado.fijarAlertaP01('SALIDA_NO_CONFIRMADA');
-        await this.evento('SALIDA_NO_CONFIRMADA', { ...datos, motivo: 'El sensor de P01 sigue detectando un vehículo' });
+        await this.evento('SALIDA_NO_CONFIRMADA', { ...datos, motivo: 'El sensor de P01 no detectó movimiento al salir' });
       }
     }));
   }

@@ -163,34 +163,47 @@ describe('flujo de entrada', () => {
     });
   });
 
-  describe('verificación con el infrarrojo de P01', () => {
+  describe('verificación con el sensor de movimiento de P01', () => {
     const entrarSinEsperar = async () => {
       await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true });
       await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: 'cmd-1' }); await s.hw({ tipo: 'cruce' }); await s.avanzar(3000);
     };
-    it('si el sensor detecta el vehículo en P01 a tiempo, la entrada queda confirmada', async () => {
-      await entrarSinEsperar();
-      await s.hw({ tipo: 'p01', ocupado: true });
-      await s.avanzar(15000);
+    it('si el sensor ve movimiento en P01 antes de la verificación, la entrada queda confirmada', async () => {
+      await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true });
+      await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: 'cmd-1' });
+      await s.hw({ tipo: 'p01', ocupado: true }); await s.hw({ tipo: 'p01', ocupado: false }); // el muñeco pasó y el sensor volvió a reposo
+      await s.hw({ tipo: 'cruce' }); await s.avanzar(3000); await s.avanzar(15000);
       expect(await s.eventos('ENTRADA_CONFIRMADA')).toHaveLength(1);
       expect(await s.eventos('ENTRADA_NO_CONFIRMADA')).toHaveLength(0);
       expect(s.estado.snapshot().p01Alerta).toBeNull();
+      expect(s.estado.snapshot().p01Confirmado).toBe(true);
     });
-    it('si el sensor no lo detecta, la entrada sigue DENTRO pero se marca la alerta', async () => {
+    it('mientras espera la verificación, p01Confirmado es false', async () => {
+      await entrarSinEsperar();
+      expect(s.estado.snapshot().p01Confirmado).toBe(false);
+    });
+    it('el movimiento anterior a este acceso no cuenta', async () => {
+      await s.hw({ tipo: 'p01', ocupado: true }); await s.hw({ tipo: 'p01', ocupado: false });
+      await entrarSinEsperar(); await s.avanzar(15000);
+      expect(await s.eventos('ENTRADA_NO_CONFIRMADA')).toHaveLength(1);
+    });
+    it('si el sensor no ve movimiento, la entrada sigue DENTRO pero se marca la alerta', async () => {
       await entrarSinEsperar();
       await s.avanzar(15000);
       expect((await s.acceso()).estado).toBe('DENTRO');
       expect(await s.eventos('ENTRADA_NO_CONFIRMADA')).toHaveLength(1);
       expect(s.estado.snapshot().p01Alerta).toBe('ENTRADA_NO_CONFIRMADA');
+      expect(s.estado.snapshot().p01Confirmado).toBe(false);
     });
-    it('la alerta se limpia cuando el sensor detecta el vehículo después', async () => {
+    it('la alerta se limpia y la llegada se confirma si el sensor ve movimiento después', async () => {
       await entrarSinEsperar(); await s.avanzar(15000);
       await s.hw({ tipo: 'p01', ocupado: true });
       expect(s.estado.snapshot().p01Alerta).toBeNull();
+      expect(s.estado.snapshot().p01Confirmado).toBe(true);
     });
     it('un vehículo que va a otro puesto no se verifica con el sensor de P01', async () => {
       await entrarCompleto(s);
-      await s.hw({ tipo: 'p01', ocupado: true });
+      await s.hw({ tipo: 'p01', ocupado: true }); // el primero quedó confirmado en P01
       const b = await crearAprendiz(pool, { cedula: '2', nombre: 'Ana Gómez' });
       const v2 = await crearVehiculo(pool, b.id, { placa: 'MOT12A', tipo: 'MOTO' });
       const deps = { pool, reloj: s.reloj, estado: s.estado, vigenciaQrSeg: 60 };
@@ -204,22 +217,21 @@ describe('flujo de entrada', () => {
       await s.hw({ tipo: 'cruce' }); await s.avanzar(3000); await s.avanzar(15000);
       expect(await s.eventos('ENTRADA_NO_CONFIRMADA')).toHaveLength(0);
     });
-    it('en la salida, si el sensor sigue viendo el vehículo se marca SALIDA_NO_CONFIRMADA', async () => {
+    it('en la salida, si el sensor no ve movimiento se marca SALIDA_NO_CONFIRMADA', async () => {
       await entrarCompleto(s);
-      await s.hw({ tipo: 'p01', ocupado: true });
       await s.autorizar('SALIDA');
       await s.hw({ tipo: 'entrada', presente: true });
       await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: barrera(s).at(-1).cmd_id });
       await s.hw({ tipo: 'cruce' }); await s.avanzar(3000); await s.avanzar(15000);
       expect(await s.eventos('SALIDA_NO_CONFIRMADA')).toHaveLength(1);
     });
-    it('en la salida, si el sensor queda libre no hay alerta', async () => {
+    it('en la salida, con movimiento en P01 no hay alerta', async () => {
       await entrarCompleto(s);
-      await s.hw({ tipo: 'p01', ocupado: true });
       await s.autorizar('SALIDA');
       await s.hw({ tipo: 'entrada', presente: true });
       await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: barrera(s).at(-1).cmd_id });
-      await s.hw({ tipo: 'cruce' }); await s.hw({ tipo: 'p01', ocupado: false }); await s.avanzar(3000); await s.avanzar(15000);
+      await s.hw({ tipo: 'p01', ocupado: true });
+      await s.hw({ tipo: 'cruce' }); await s.avanzar(3000); await s.avanzar(15000);
       expect(await s.eventos('SALIDA_NO_CONFIRMADA')).toHaveLength(0);
     });
   });

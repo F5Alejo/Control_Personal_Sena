@@ -15,6 +15,8 @@ export interface SnapshotHardware {
   p01Sensor: boolean | null;
   /** Discrepancia entre lo registrado y lo que ve el infrarrojo de P01. */
   p01Alerta: 'ENTRADA_NO_CONFIRMADA' | 'SALIDA_NO_CONFIRMADA' | null;
+  /** Llegada a P01 verificada con el sensor de movimiento: false = verificando o sin confirmar, null = sin acceso en P01. */
+  p01Confirmado: boolean | null;
   barrera: 'abierta' | 'cerrada' | 'desconocida';
   telemetria: Telemetria | null;
   actualizado: string;
@@ -24,7 +26,7 @@ export class EstadoHardware extends EventEmitter {
   /** La última lectura de la barrera vino del simulador de sensores (modo prueba con el ESP32 real). */
   entradaSimulada = false;
   private s: SnapshotHardware = {
-    esp32Online: false, vehiculoEnEntrada: false, distanciaCm: null, p01Ocupado: null, p01Sensor: null, p01Alerta: null, barrera: 'desconocida', telemetria: null,
+    esp32Online: false, vehiculoEnEntrada: false, distanciaCm: null, p01Ocupado: null, p01Sensor: null, p01Alerta: null, p01Confirmado: null, barrera: 'desconocida', telemetria: null,
     actualizado: new Date().toISOString(),
   };
 
@@ -46,6 +48,12 @@ export class EstadoHardware extends EventEmitter {
   fijarAlertaP01(alerta: SnapshotHardware['p01Alerta']): void {
     if (this.s.p01Alerta === alerta) return;
     this.s.p01Alerta = alerta;
+    this.cambio();
+  }
+
+  fijarConfirmadoP01(v: boolean | null): void {
+    if (this.s.p01Confirmado === v) return;
+    this.s.p01Confirmado = v;
     this.cambio();
   }
 
@@ -77,7 +85,7 @@ export class EstadoHardware extends EventEmitter {
         if (this.s.p01Sensor === m.ocupado) return;
         this.s.p01Sensor = m.ocupado;
         // Una lectura que concuerda con lo registrado resuelve la alerta pendiente.
-        if ((this.s.p01Alerta === 'ENTRADA_NO_CONFIRMADA' && m.ocupado) || (this.s.p01Alerta === 'SALIDA_NO_CONFIRMADA' && !m.ocupado)) this.s.p01Alerta = null;
+        if (m.ocupado && this.s.p01Alerta) { if (this.s.p01Alerta === 'ENTRADA_NO_CONFIRMADA') this.s.p01Confirmado = true; this.s.p01Alerta = null; }
         this.cambio(); this.emit('p01', m.ocupado); return;
       }
       case 'cruce':
