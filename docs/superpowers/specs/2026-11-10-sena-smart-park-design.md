@@ -118,9 +118,9 @@ Igual que la entrada, con estas diferencias:
 
 ## 7. Hardware y pines (revisión 2026-11-11, definida por el usuario)
 
-Se retiran LM393, HC-SR501, DHT11 y FC-28. El HC-SR04 pasa de vigilar P01 a vigilar la aproximación a la barrera. No lleva relé. El módulo infrarrojo digital (el de los dos LED amarillos) vuelve, ahora como verificador de P01: confirma que el vehículo autorizado sí llegó al puesto.
+Se retiran LM393, DHT11 y FC-28. El HC-SR04 pasa de vigilar P01 a vigilar la aproximación a la barrera. No lleva relé. El sensor de movimiento PIR HC-SR501 (el de 360°) es ahora el verificador de P01: confirma que el vehículo autorizado sí llegó al puesto (el infrarrojo digital anterior no reportaba datos).
 
-Alimentación: ESP32 por USB. Riel de 5 V tomado de VIN: servo, HC-SR04 y LCD. Riel de 3,3 V: OLED, TTP223B e infrarrojo de P01. Los GND de todo van unidos. ECHO del HC-SR04 entrega 5 V y pasa por divisor de resistencias (100 Ω arriba y 220 Ω a GND, ≈3,4 V) antes del ESP32. Si el servo reinicia el ESP32 al moverse, se agrega un condensador (470 µF) en el riel de 5 V o una fuente aparte.
+Alimentación: ESP32 por USB. Riel de 5 V tomado de VIN: servo, HC-SR04 y LCD. Riel de 3,3 V: OLED y TTP223B. El PIR de P01 va a 5 V (VIN). Los GND de todo van unidos. ECHO del HC-SR04 entrega 5 V y pasa por divisor de resistencias (100 Ω arriba y 220 Ω a GND, ≈3,4 V) antes del ESP32. Si el servo reinicia el ESP32 al moverse, se agrega un condensador (470 µF) en el riel de 5 V o una fuente aparte.
 
 | Función | Componente | GPIO |
 |---|---|---|
@@ -130,7 +130,7 @@ Alimentación: ESP32 por USB. Riel de 5 V tomado de VIN: servo, HC-SR04 y LCD. R
 | Barrera | Servo SG90 | 13 |
 | LED rojo / verde | indicadores | 25 / 26 |
 | Mantenimiento / apertura manual | TTP223B | 27 |
-| Verificación de P01 (¿llegó el vehículo?) | Infrarrojo digital, salida OUT (LOW = obstáculo) | 14 |
+| Verificación de P01 (¿llegó el vehículo?) | PIR HC-SR501, salida OUT (HIGH = movimiento) | 14 |
 
 Sensado sin LM393 ni TCRT5000: el HC-SR04 es el único sensor de vehículo. «Vehículo presente» = distancia menor al umbral durante varias lecturas seguidas. «Pasó» = estuvo presente, la barrera abrió y dejó de estar presente. P01 ya no tiene sensor: el backend lo marca ocupado al finalizar una entrada y libre al finalizar una salida. Prioridad: HC-SR04 y servo son críticos; el resto no bloquea el flujo.
 
@@ -144,7 +144,7 @@ ESP32 → backend:
 
 - `senapark/estado`: `online`/`offline`, con Last Will y retenido.
 - `senapark/sensores/entrada`: `{presente: bool, distancia_cm}` en cada cambio de presencia, cuando la distancia varía 3 cm (máx. cada 0,5 s) y cada 5 s como latido.
-- `senapark/sensores/p01`: `{ocupado: bool}` del infrarrojo de P01, en cada cambio (4 lecturas seguidas a 50 ms) y cada 5 s como latido.
+- `senapark/sensores/p01`: `{ocupado: bool}` del PIR de P01 (`true` = movimiento), en cada cambio (4 lecturas seguidas a 50 ms) y cada 5 s como latido. El PIR tarda 30 s en calentar tras encender y se ignora ese tiempo.
 - `senapark/sensores/paso`: `{evento: "cruce"}`, deducido por el firmware con el HC-SR04.
 - `senapark/telemetria`: `{rssi, uptime_s, ip, heap, angulo}` cada 5 s.
 - `senapark/barrera/estado`: `{estado: "abierta"|"cerrada", cmd_id}`.
@@ -213,10 +213,8 @@ Si el tiempo aprieta, se recorta en este orden: OLED, estadísticas y gráficas.
 - **Reinicio de la demo:** el kiosco tiene un botón "Reiniciar demo" que cierra accesos activos y limpia autorizaciones pendientes, para ensayar varias veces sin tocar la base de datos.
 - **Modo simulado:** el kiosco tiene un modo oculto de pruebas que permite simular las lecturas del HC-SR04 (distancia y cruce) (publicando por MQTT como si fuera el ESP32). Sirve para desarrollar el backend y para ensayar la demo si un sensor falla.
 
-## 7 bis. Verificación de P01 con el infrarrojo
+## 7 bis. Verificación de P01 con el sensor de movimiento
 
-Toda entrada va primero a P01 (el primer puesto libre). Tras registrarse la entrada, el backend espera `CONFIRMA_P01_MS` (15 s por defecto) y mira el infrarrojo: si ve el vehículo registra `ENTRADA_CONFIRMADA`; si no, la entrada **sigue registrada como DENTRO** pero se marca la alerta `ENTRADA_NO_CONFIRMADA` (el vehículo pudo irse a otro lado), visible en el historial, el panel de equipos y la escena. En la salida, si pasado ese tiempo el sensor sigue viendo un vehículo se marca `SALIDA_NO_CONFIRMADA`. Una lectura posterior que concuerde con lo registrado limpia la alerta. Los demás puestos (P02–P06) no tienen sensor y no se verifican. El módulo se alimenta a 3,3 V, OUT a GPIO 14 con pull-up interno.
+Toda entrada va primero a P01 (el primer puesto libre). Como un PIR detecta movimiento y no presencia estática, la verificación es: desde que se autoriza el acceso, el backend recuerda si el PIR vio movimiento. Tras registrarse la entrada espera `CONFIRMA_P01_MS` (15 s por defecto); si hubo movimiento (o el PIR lo marca en ese momento) registra `ENTRADA_CONFIRMADA` (`p01Confirmado = true`, tarjeta verde en la escena); si no, la entrada **sigue registrada como DENTRO** pero se marca la alerta `ENTRADA_NO_CONFIRMADA` (tarjeta roja: el vehículo pudo irse a otro lado). Un movimiento posterior limpia la alerta y confirma. En la salida, si no hay movimiento en P01 pasado ese tiempo se marca `SALIDA_NO_CONFIRMADA`. Los demás puestos (P02–P06) no tienen sensor y no se verifican. El PIR se alimenta a 5 V (VIN) con GND común y su OUT (3,3 V) va a GPIO 14.
 
-**P01 reservado para el hardware.** En modo prueba con el ESP32 real, el simulador de sensores marca sus lecturas de la barrera con `simulado: true`; una entrada así nunca recibe P01 (va al primer puesto libre siguiente). Así el primer carro de la presentación, el del hardware, ocupa P01.
-
-**Ritmo de la maqueta.** Al validar el QR (con el vehículo frente al HC-SR04) la barrera abre y permanece abierta `BARRERA_ABIERTA_MS` (10 s por defecto); se cierra sola aunque el HC-SR04 vea el cruce antes o no lo vea. Pasados `ESTACIONAR_MS` (6 s) el acceso queda DENTRO y `CONFIRMA_P01_MS` (15 s) después el infrarrojo confirma si el vehículo está o no en P01. Con `BARRERA_ABIERTA_MS=0` se recupera el comportamiento rápido (cierra al ver el cruce).
+**Ritmo de la maqueta.** Al validar el QR (con el vehículo frente al HC-SR04) la barrera abre y permanece abierta `BARRERA_ABIERTA_MS` (10 s por defecto); se cierra sola aunque el HC-SR04 vea el cruce antes o no lo vea. Pasados `ESTACIONAR_MS` (6 s) el acceso queda DENTRO y `CONFIRMA_P01_MS` (15 s) después el sensor de movimiento confirma si hubo o no movimiento en P01. Con `BARRERA_ABIERTA_MS=0` se recupera el comportamiento rápido (cierra al ver el cruce).

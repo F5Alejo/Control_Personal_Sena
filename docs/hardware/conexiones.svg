@@ -19,7 +19,7 @@
 <circle cx="600" cy="650" r="6" fill="#862e9c" stroke="#1c2a20" stroke-width="1.5"/>
 <text x="614" y="655" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GPIO 27  táctil</text>
 <circle cx="600" cy="710" r="6" fill="#f08c00" stroke="#1c2a20" stroke-width="1.5"/>
-<text x="614" y="715" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GPIO 14  infrarrojo P01</text>
+<text x="614" y="715" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GPIO 14  movimiento P01</text>
 <circle cx="900" cy="200" r="6" fill="#1971c2" stroke="#1c2a20" stroke-width="1.5"/>
 <text x="886" y="205" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">GPIO 21  SDA</text>
 <circle cx="900" cy="260" r="6" fill="#2f9e44" stroke="#1c2a20" stroke-width="1.5"/>
@@ -131,17 +131,17 @@
 <text x="1054" y="689" font-size="12" fill="#5a6b5f">Servo · HC-SR04 · LCD</text>
 <rect x="1020" y="710" width="22" height="22" rx="11" fill="#e64980"/>
 <text x="1054" y="724" font-size="14" font-weight="700" fill="#1c2a20">Riel 3,3 V (3V3 del ESP32)</text>
-<text x="1054" y="741" font-size="12" fill="#5a6b5f">OLED · TTP223B · IR P01</text>
+<text x="1054" y="741" font-size="12" fill="#5a6b5f">OLED · TTP223B</text>
 <rect x="1020" y="762" width="22" height="22" rx="11" fill="#212529"/>
 <text x="1054" y="776" font-size="14" font-weight="700" fill="#1c2a20">GND común</text>
 <text x="1054" y="793" font-size="12" fill="#5a6b5f">todos los módulos y el ESP32</text>
 <text x="1020" y="840" font-size="12" fill="#1c2a20">• Con USB conectado, VIN entrega 5 V al servo; si el servo</text>
 <text x="1020" y="858" font-size="12" fill="#1c2a20">  reinicia la placa, use una fuente de 5 V aparte (GND unido).</text>
 <rect x="40" y="930" width="300" height="100" rx="12" fill="#fff" stroke="#1c2a20" stroke-width="2.5"/>
-<text x="190" y="958" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">Infrarrojo P01</text>
-<text x="190" y="976" text-anchor="middle" font-size="12" fill="#5a6b5f">2 LED amarillos · mirando a P01</text>
-<rect x="56" y="988" width="132" height="22" rx="11" fill="#e64980"/>
-<text x="122" y="1004" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">VCC ← 3,3 V (3V3)</text>
+<text x="190" y="958" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">Sensor de movimiento P01</text>
+<text x="190" y="976" text-anchor="middle" font-size="12" fill="#5a6b5f">PIR HC-SR501 · mirando a P01</text>
+<rect x="56" y="988" width="132" height="22" rx="11" fill="#e03131"/>
+<text x="122" y="1004" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">VCC ← 5 V (VIN)</text>
 <text x="200" y="1004" font-size="12" fill="#1c2a20">GND ← GND común</text>
 <circle cx="340" cy="1010" r="6" fill="#f08c00" stroke="#1c2a20" stroke-width="1.5"/>
 <text x="326" y="1015" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">OUT</text>
