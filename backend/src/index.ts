@@ -14,7 +14,7 @@ import { iniciarBrokerDev } from './mqtt/broker-dev.js';
 import { conectarMqtt } from './mqtt/cliente.js';
 import { enlazarHardware } from './mqtt/enlace.js';
 import { FlujoAcceso } from './servicios/flujo-acceso.js';
-import { crearTiempoReal } from './tiempo-real/socket.js';
+import { atenderHttp, crearTiempoReal } from './tiempo-real/socket.js';
 import { crearEsp32Simulado } from './simulador/esp32-simulado.js';
 import { servirFrontend } from './web/estaticos.js';
 
@@ -58,7 +58,7 @@ await simulador?.conectar();
 
 const app = crearApp({ pool, reloj: relojSistema, config, emisor, publicador: cliente, temporizador: temporizadorSistema, estado, flujo, simulador });
 servirFrontend(app, fileURLToPath(new URL('../../frontend/dist/frontend/browser', import.meta.url)));
-servidor.on('request', app);
+atenderHttp(servidor, app);
 await new Promise<void>((ok, ko) => { servidor.once('error', ko); servidor.listen(config.puerto, ok); });
 
 const ip = detectarIpLocal();

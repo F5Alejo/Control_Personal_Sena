@@ -26,3 +26,14 @@ export function crearTiempoReal(servidor: http.Server, obtenerEstado: () => Prom
     },
   };
 }
+
+/**
+ * Conecta Express al servidor HTTP sin pisar a Socket.IO: sus peticiones (también las que rechaza,
+ * por ejemplo por origen) ya fueron respondidas y Express no debe volver a tocarlas.
+ */
+export function atenderHttp(servidor: http.Server, app: (req: http.IncomingMessage, res: http.ServerResponse) => void): void {
+  servidor.on('request', (req, res) => {
+    if (req.url?.startsWith('/socket.io/') || res.headersSent) return;
+    app(req, res);
+  });
+}
