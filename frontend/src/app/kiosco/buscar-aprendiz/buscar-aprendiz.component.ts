@@ -16,6 +16,7 @@ import { BusquedaAprendiz, Direccion, Seleccion, Vehiculo } from '../../core/mod
                (input)="cedula.set($any($event.target).value)" (keydown.enter)="buscar()" />
       </mat-form-field>
       <button mat-flat-button (click)="buscar()" [disabled]="cargando()">Buscar</button>
+      <button mat-stroked-button data-nuevo (click)="registrar.emit(cedula().trim())">Nuevo aprendiz</button>
     </div>
 
     @if (error()) { <p class="error">{{ error() }}</p> }
@@ -44,7 +45,7 @@ import { BusquedaAprendiz, Direccion, Seleccion, Vehiculo } from '../../core/mod
   `,
   styles: `
     .busqueda { display: flex; gap: 12px; align-items: flex-start; } .campo { flex: 1; }
-    .busqueda button { margin-top: 4px; min-width: 110px; }
+    .busqueda button { margin-top: 4px; min-width: 110px; white-space: nowrap; }
     article { margin-top: 12px; padding-top: 24px; border-top: 1px solid var(--linea); }
     h3 { font-size: 30px; font-weight: 600; line-height: 1.1; } .meta { color: var(--suave); margin: 6px 0 0; }
     .vehiculos { display: flex; gap: 10px; flex-wrap: wrap; margin: 24px 0; }

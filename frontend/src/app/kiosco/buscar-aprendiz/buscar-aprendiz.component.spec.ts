@@ -35,6 +35,16 @@ describe('BuscarAprendizComponent', () => {
     expect(el.textContent).toContain('Registrar aprendiz');
   });
 
+  it('"Nuevo aprendiz" abre el registro sin buscar antes, con la cédula escrita', async () => {
+    const { f, el } = montar(null);
+    const pedidos: string[] = [];
+    f.componentInstance.registrar.subscribe((c: string) => pedidos.push(c));
+    const input = el.querySelector('input') as HTMLInputElement;
+    input.value = ' 123 '; input.dispatchEvent(new Event('input'));
+    (el.querySelector('[data-nuevo]') as HTMLButtonElement).click();
+    expect(pedidos).toEqual(['123']);
+  });
+
   it('no emite hasta elegir vehículo y dirección', async () => {
     const { el, emitido, buscar, f } = montar({ aprendiz, vehiculos: [v(1, 'ABC123'), v(2, 'XYZ987')] });
     await buscar('1000000001');
