@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1000" width="1500" height="1000" font-family="DejaVu Sans, Arial, sans-serif">
+<rect width="1500" height="1000" fill="#f7f9f6"/>
+<text x="750" y="44" text-anchor="middle" font-size="28" font-weight="700" fill="#1c2a20">SENA SMART PARK · Conexiones del ESP32</text>
+<text x="750" y="70" text-anchor="middle" font-size="15" fill="#5a6b5f">Numeración GPIO (no el número de pata de la placa). Todos los GND van unidos al GND del ESP32.</text>
+<rect x="600" y="130" width="300" height="720" rx="12" fill="#e9efe7" stroke="#1c2a20" stroke-width="2.5"/>
+<text x="750.0" y="158" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">ESP32 DevKit</text>
+<text x="750.0" y="178" text-anchor="middle" font-size="12" fill="#5a6b5f">30 patas · USB abajo</text>
+<rect x="710.0" y="842" width="80" height="18" rx="4" fill="#9aa59d"/>
+<circle cx="600" cy="200" r="6" fill="#e0a100" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="614" y="205" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GPIO 5  TRIG</text>
+<circle cx="600" cy="260" r="6" fill="#e8590c" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="614" y="265" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GPIO 18  ECHO</text>
+<circle cx="600" cy="370" r="6" fill="#d9480f" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="614" y="375" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GPIO 13  servo</text>
+<circle cx="600" cy="480" r="6" fill="#e03131" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="614" y="485" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GPIO 25  LED rojo</text>
+<circle cx="600" cy="540" r="6" fill="#2b8a3e" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="614" y="545" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GPIO 26  LED verde</text>
+<circle cx="600" cy="650" r="6" fill="#862e9c" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="614" y="655" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GPIO 27  táctil</text>
+<circle cx="900" cy="200" r="6" fill="#1971c2" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="886" y="205" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">GPIO 21  SDA</text>
+<circle cx="900" cy="260" r="6" fill="#2f9e44" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="886" y="265" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">GPIO 22  SCL</text>
+<circle cx="900" cy="410" r="6" fill="#1971c2" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="886" y="415" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">GPIO 16  SDA</text>
+<circle cx="900" cy="470" r="6" fill="#2f9e44" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="886" y="475" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">GPIO 17  SCL</text>
+<text x="750.0" y="790" text-anchor="middle" font-size="13" fill="#5a6b5f">Alimentación</text>
+<circle cx="630" cy="820" r="6" fill="#e03131" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="644" y="825" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">VIN (5 V)</text>
+<circle cx="750" cy="820" r="6" fill="#e64980" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="764" y="825" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">3V3</text>
+<circle cx="840" cy="820" r="6" fill="#212529" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="854" y="825" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">GND</text>
+<rect x="40" y="100" width="300" height="250" rx="12" fill="#fff" stroke="#1c2a20" stroke-width="2.5"/>
+<text x="190.0" y="128" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">HC-SR04</text>
+<text x="190.0" y="148" text-anchor="middle" font-size="12" fill="#5a6b5f">Sensor de distancia en la barrera</text>
+<circle cx="340" cy="172" r="6" fill="#e03131" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="177" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">VCC</text>
+<circle cx="340" cy="206" r="6" fill="#e0a100" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="211" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">TRIG</text>
+<circle cx="340" cy="242" r="6" fill="#e8590c" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="247" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">ECHO</text>
+<circle cx="340" cy="320" r="6" fill="#212529" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="325" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">GND</text>
+<rect x="56" y="160" width="86.39999999999999" height="22" rx="11" fill="#e03131"/>
+<text x="99.19999999999999" y="176" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">5 V (VIN)</text>
+<rect x="56" y="308" width="86.39999999999999" height="22" rx="11" fill="#212529"/>
+<text x="99.19999999999999" y="324" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">GND común</text>
+<path d="M340,206 L470,206 L470,200 L600,200" fill="none" stroke="#e0a100" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M340,242 L360,242 L360,268 L380,268" fill="none" stroke="#e8590c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="380" y="236" width="200" height="66" rx="8" fill="#fff8e1" stroke="#e8590c" stroke-width="1.8" stroke-dasharray="5 3"/>
+<text x="390" y="254" font-size="12" font-weight="700" fill="#e8590c">DIVISOR (5 V → 3,3 V)</text>
+<text x="390" y="273" font-size="12" fill="#1c2a20">ECHO ─[100 Ω]─┬─ GPIO 18</text>
+<text x="390" y="291" font-size="12" fill="#1c2a20">                    └─[220 Ω]─ GND</text>
+<path d="M580,268 L590,268 L590,260 L600,260" fill="none" stroke="#e8590c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="40" y="380" width="300" height="170" rx="12" fill="#fff" stroke="#1c2a20" stroke-width="2.5"/>
+<text x="190.0" y="408" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">Servo SG90</text>
+<text x="190.0" y="428" text-anchor="middle" font-size="12" fill="#5a6b5f">Barrera (0° cerrada · 90° abierta)</text>
+<circle cx="340" cy="440" r="6" fill="#d9480f" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="445" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">Señal</text>
+<circle cx="340" cy="472" r="6" fill="#e03131" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="477" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">V+</text>
+<circle cx="340" cy="504" r="6" fill="#212529" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="509" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">GND</text>
+<rect x="56" y="460" width="86.39999999999999" height="22" rx="11" fill="#e03131"/>
+<text x="99.19999999999999" y="476" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">5 V (VIN)</text>
+<rect x="56" y="492" width="86.39999999999999" height="22" rx="11" fill="#212529"/>
+<text x="99.19999999999999" y="508" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">GND común</text>
+<text x="190" y="540" font-size="11" fill="#5a6b5f" text-anchor="middle">470 µF entre 5 V y GND si el ESP32 se reinicia</text>
+<path d="M340,440 L480,440 L480,370 L600,370" fill="none" stroke="#d9480f" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="40" y="580" width="300" height="150" rx="12" fill="#fff" stroke="#1c2a20" stroke-width="2.5"/>
+<text x="190.0" y="608" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">LED rojo y LED verde</text>
+<text x="190.0" y="628" text-anchor="middle" font-size="12" fill="#5a6b5f">Cerrada = rojo · Abierta = verde</text>
+<circle cx="340" cy="656" r="6" fill="#e03131" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="661" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">rojo</text>
+<circle cx="340" cy="690" r="6" fill="#2b8a3e" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="695" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">verde</text>
+<path d="M340,656 L440,634 L440,480 L600,480" fill="none" stroke="#e03131" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M340,690 L460,668 L460,540 L600,540" fill="none" stroke="#2b8a3e" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="56" y="644" width="170.0" height="22" rx="11" fill="#e03131"/>
+<text x="141.0" y="660" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">GPIO → 220 Ω → ánodo</text>
+<rect x="56" y="678" width="170.0" height="22" rx="11" fill="#2b8a3e"/>
+<text x="141.0" y="694" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">GPIO → 220 Ω → ánodo</text>
+<text x="190" y="720" font-size="11" fill="#5a6b5f" text-anchor="middle">cátodos (pata corta) a GND común</text>
+<rect x="40" y="760" width="300" height="150" rx="12" fill="#fff" stroke="#1c2a20" stroke-width="2.5"/>
+<text x="190.0" y="788" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">TTP223B</text>
+<text x="190.0" y="808" text-anchor="middle" font-size="12" fill="#5a6b5f">Táctil: mantenimiento / apertura manual</text>
+<circle cx="340" cy="842" r="6" fill="#862e9c" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="326" y="847" text-anchor="end" font-size="14" font-weight="600" fill="#1c2a20">SIG</text>
+<path d="M340,842 L500,842 L500,650 L600,650" fill="none" stroke="#862e9c" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="56" y="830" width="147.2" height="22" rx="11" fill="#e64980"/>
+<text x="129.6" y="846" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">VCC ← 3,3 V (3V3)</text>
+<rect x="56" y="864" width="132.0" height="22" rx="11" fill="#212529"/>
+<text x="122.0" y="880" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">GND ← GND común</text>
+<rect x="1160" y="100" width="300" height="220" rx="12" fill="#fff" stroke="#1c2a20" stroke-width="2.5"/>
+<text x="1310.0" y="128" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">LCD 16×2 (I2C 0x27)</text>
+<text x="1310.0" y="148" text-anchor="middle" font-size="12" fill="#5a6b5f">Instrucciones al conductor</text>
+<circle cx="1160" cy="160" r="6" fill="#1971c2" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="1174" y="165" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">SDA</text>
+<circle cx="1160" cy="200" r="6" fill="#2f9e44" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="1174" y="205" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">SCL</text>
+<path d="M900,200 L1040,200 L1040,160 L1160,160" fill="none" stroke="#1971c2" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M900,260 L1080,260 L1080,200 L1160,200" fill="none" stroke="#2f9e44" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="1180" y="238" width="132.0" height="22" rx="11" fill="#e03131"/>
+<text x="1246.0" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">VCC ← 5 V (VIN)</text>
+<rect x="1180" y="272" width="132.0" height="22" rx="11" fill="#212529"/>
+<text x="1246.0" y="288" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">GND ← GND común</text>
+<text x="1310" y="305" font-size="11" fill="#5a6b5f" text-anchor="middle">Bus I2C #1 (Wire)</text>
+<rect x="1160" y="360" width="300" height="200" rx="12" fill="#fff" stroke="#1c2a20" stroke-width="2.5"/>
+<text x="1310.0" y="388" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">OLED 0,96" (I2C 0x3C)</text>
+<text x="1310.0" y="408" text-anchor="middle" font-size="12" fill="#5a6b5f">Estado, 6 páginas rotativas</text>
+<circle cx="1160" cy="410" r="6" fill="#1971c2" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="1174" y="415" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">SDA</text>
+<circle cx="1160" cy="450" r="6" fill="#2f9e44" stroke="#1c2a20" stroke-width="1.5"/>
+<text x="1174" y="455" text-anchor="start" font-size="14" font-weight="600" fill="#1c2a20">SCL</text>
+<path d="M900,410 L1160,410" fill="none" stroke="#1971c2" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M900,470 L1100,470 L1100,450 L1160,450" fill="none" stroke="#2f9e44" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="1180" y="488" width="147.2" height="22" rx="11" fill="#e64980"/>
+<text x="1253.6" y="504" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">VCC ← 3,3 V (3V3)</text>
+<rect x="1180" y="518" width="132.0" height="22" rx="11" fill="#212529"/>
+<text x="1246.0" y="534" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">GND ← GND común</text>
+<text x="1310" y="552" font-size="11" fill="#5a6b5f" text-anchor="middle">Bus I2C #2 (Wire1)</text>
+<rect x="1000" y="610" width="460" height="270" rx="12" fill="#fff" stroke="#1c2a20" stroke-width="2.5"/>
+<text x="1230" y="640" text-anchor="middle" font-size="18" font-weight="700" fill="#1c2a20">Alimentación</text>
+<rect x="1020" y="658" width="22" height="22" rx="11" fill="#e03131"/>
+<text x="1054" y="672" font-size="14" font-weight="700" fill="#1c2a20">Riel 5 V (VIN del ESP32)</text>
+<text x="1054" y="689" font-size="12" fill="#5a6b5f">Servo · HC-SR04 · LCD</text>
+<rect x="1020" y="710" width="22" height="22" rx="11" fill="#e64980"/>
+<text x="1054" y="724" font-size="14" font-weight="700" fill="#1c2a20">Riel 3,3 V (3V3 del ESP32)</text>
+<text x="1054" y="741" font-size="12" fill="#5a6b5f">OLED · TTP223B</text>
+<rect x="1020" y="762" width="22" height="22" rx="11" fill="#212529"/>
+<text x="1054" y="776" font-size="14" font-weight="700" fill="#1c2a20">GND común</text>
+<text x="1054" y="793" font-size="12" fill="#5a6b5f">todos los módulos y el ESP32</text>
+<text x="1020" y="840" font-size="12" fill="#1c2a20">• Con USB conectado, VIN entrega 5 V al servo; si el servo</text>
+<text x="1020" y="858" font-size="12" fill="#1c2a20">  reinicia la placa, use una fuente de 5 V aparte (GND unido).</text>
+<rect x="40" y="925" width="1420" height="55" rx="10" fill="#fff" stroke="#c9d3cb"/>
+<line x1="60" y1="950" x2="94" y2="950" stroke="#e0a100" stroke-width="5" stroke-linecap="round"/>
+<text x="102" y="955" font-size="13" fill="#1c2a20">TRIG</text>
+<line x1="182" y1="950" x2="216" y2="950" stroke="#e8590c" stroke-width="5" stroke-linecap="round"/>
+<text x="224" y="955" font-size="13" fill="#1c2a20">ECHO</text>
+<line x1="304" y1="950" x2="338" y2="950" stroke="#d9480f" stroke-width="5" stroke-linecap="round"/>
+<text x="346" y="955" font-size="13" fill="#1c2a20">Servo</text>
+<line x1="434" y1="950" x2="468" y2="950" stroke="#1971c2" stroke-width="5" stroke-linecap="round"/>
+<text x="476" y="955" font-size="13" fill="#1c2a20">SDA</text>
+<line x1="548" y1="950" x2="582" y2="950" stroke="#2f9e44" stroke-width="5" stroke-linecap="round"/>
+<text x="590" y="955" font-size="13" fill="#1c2a20">SCL</text>
+<line x1="662" y1="950" x2="696" y2="950" stroke="#e03131" stroke-width="5" stroke-linecap="round"/>
+<text x="704" y="955" font-size="13" fill="#1c2a20">LED rojo</text>
+<line x1="816" y1="950" x2="850" y2="950" stroke="#2b8a3e" stroke-width="5" stroke-linecap="round"/>
+<text x="858" y="955" font-size="13" fill="#1c2a20">LED verde</text>
+<line x1="978" y1="950" x2="1012" y2="950" stroke="#862e9c" stroke-width="5" stroke-linecap="round"/>
+<text x="1020" y="955" font-size="13" fill="#1c2a20">Táctil</text>
+<line x1="1116" y1="950" x2="1150" y2="950" stroke="#e03131" stroke-width="5" stroke-linecap="round"/>
+<text x="1158" y="955" font-size="13" fill="#1c2a20">5 V</text>
+<line x1="1230" y1="950" x2="1264" y2="950" stroke="#e64980" stroke-width="5" stroke-linecap="round"/>
+<text x="1272" y="955" font-size="13" fill="#1c2a20">3,3 V</text>
+<line x1="1360" y1="950" x2="1394" y2="950" stroke="#212529" stroke-width="5" stroke-linecap="round"/>
+<text x="1402" y="955" font-size="13" fill="#1c2a20">GND</text>
+</svg>

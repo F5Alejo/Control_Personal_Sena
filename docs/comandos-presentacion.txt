@@ -1,0 +1,168 @@
+SENA SMART PARK - COMANDOS PARA LA PRESENTACION (CachyOS, shell fish)
+Proyecto: ~/Descargas/Hola_mundo/Control_Personal_Sena
+Todo corre en este computador. MQTT (broker aedes) y el ESP32 simulado
+los levanta el propio backend con MODO_SIMULADO=true.
+
+=====================================================================
+0. UNA SOLA VEZ (ya hecho en este equipo; solo repetir si algo falta)
+=====================================================================
+createdb senapark
+createdb senapark_test
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena/backend
+cp .env.example .env
+npm install
+npm run migrar
+npm run semilla
+cd ../frontend
+npm install
+
+=====================================================================
+1. ANTES DE LA PRESENTACION (con calma, 10 min antes)
+=====================================================================
+# 1.1 Base de datos
+sudo systemctl start postgresql
+systemctl is-active postgresql            # debe decir: active
+psql -l | grep senapark                   # deben salir senapark y senapark_test
+
+# 1.2 Compilar el frontend (el backend lo sirve en el puerto 3000)
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena/frontend
+npx ng build
+
+# 1.3 Pruebas automaticas (opcional, confirman que todo esta sano)
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena/backend
+npm test
+cd ../frontend
+npx ng test --watch=false
+
+# 1.4 Datos limpios para la demo (borra accesos y eventos, conserva aprendices)
+#     Tambien se puede hacer desde el kiosco con el boton "Reiniciar demo".
+
+=====================================================================
+2. PRENDER TODO (modo demo, un solo proceso)
+=====================================================================
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena/backend
+env MODO_SIMULADO=true npm start
+
+# Esto levanta: API + Socket.IO + broker MQTT (puerto 1883, solo local)
+#               + ESP32 simulado + el frontend compilado, todo en :3000.
+# Deje esa terminal abierta. Ctrl+C la apaga.
+
+# Abrir el kiosco del celador (en ESTE computador):
+xdg-open http://localhost:3000
+# IMPORTANTE: usar "localhost", no la IP. La API del kiosco solo responde
+# al propio equipo.
+
+=====================================================================
+3. ALTERNATIVA: MODO DESARROLLO (recarga en caliente, 2 terminales)
+=====================================================================
+# Terminal 1
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena/backend
+env MODO_SIMULADO=true npm run dev
+
+# Terminal 2
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena/frontend
+npm start
+
+# Kiosco en http://localhost:4200
+
+=====================================================================
+4. COMPROBAR QUE TODO ESTA VIVO
+=====================================================================
+systemctl is-active postgresql                       # active
+ss -ltn | grep -E ':3000|:1883'                      # deben salir ambos puertos
+curl -s http://localhost:3000/api/estado             # JSON con el estado
+curl -s http://localhost:3000/api/estado | head -c 400
+psql senapark -c "select codigo, estado from espacios;"   # P01 LIBRE/OCUPADO
+
+# Solo el broker MQTT, por separado (no hace falta si ya corre npm start):
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena/backend
+npm run broker
+
+=====================================================================
+5. USAR EL CELULAR PARA ESCANEAR EL QR
+=====================================================================
+# 5.1 Requisitos
+#   - El celular y el computador en la MISMA Wi-Fi (o el hotspot del celular).
+#   - Si la red del lugar aisla los dispositivos (redes de institutos),
+#     use el hotspot del celular y conecte el PC a el.
+
+# 5.2 Saber la IP del computador
+ip -4 -o addr show | grep -v ' lo '
+#   (en esta casa es 192.168.1.101 por wlan0; ignorar docker0 y virbr0)
+
+# 5.3 Abrir SOLO el puerto 3000 en el firewall (ufw esta activo aqui)
+sudo ufw allow 3000/tcp
+# Mas seguro, solo para su red local:
+#   sudo ufw allow from 192.168.1.0/24 to any port 3000 proto tcp
+sudo ufw status
+
+# 5.4 Arrancar el backend FORZANDO la IP que vera el celular
+#     (cambie 192.168.1.101 por la IP real del paso 5.2)
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena/backend
+env PUBLIC_URL=http://192.168.1.101:3000 MODO_SIMULADO=true npm start
+
+# 5.5 Probar antes que el celular llega al PC: en el navegador del celular
+#     abrir  http://192.168.1.101:3000/acceso/prueba
+#     Si carga una pagina (aunque diga token invalido), el puerto esta bien.
+
+# 5.6 NO abrir en el firewall: 4200 ni 5432 (PostgreSQL). El 1883 (MQTT) solo
+#     se abre con el ESP32 real (seccion 6b); en modo demo no hace falta.
+
+=====================================================================
+6. GUION RAPIDO DE LA DEMO (sin hardware)
+=====================================================================
+# En el kiosco (http://localhost:3000 en el PC):
+#  1. Buscar la cedula 1000000001  (aprendiz de ejemplo).
+#  2. Elegir el vehiculo y la direccion ENTRADA. Sale el QR (vigencia 60 s).
+#  3. Con el celular, escanear el QR. Muestra "Esperando el vehiculo".
+#  4. En el panel Simulador pulsar en orden:
+#        vehiculo en entrada (o el control de distancia) -> (barrera abre) -> cruce
+#     El vehiculo se acerca en la escena segun la distancia del HC-SR04.
+#     Pasados unos segundos P01 queda ocupado solo. El celular y el kiosco
+#     muestran la entrada registrada.
+#  5. Repetir con SALIDA: vehiculo en entrada -> cruce -> P01 queda libre.
+#  6. Revisar el Historial (accesos y eventos).
+# Si algo se traba: boton "Reiniciar demo" en el kiosco.
+
+=====================================================================
+6b. CON EL ESP32 REAL (hardware conectado, sin simulador)
+=====================================================================
+# 1. En include/secrets.h (copia de secrets.h.example) poner WIFI_SSID, WIFI_PASS,
+#    MQTT_HOST = IP del PC (paso 5.2), MQTT_USER y MQTT_PASS = los del backend.
+# 2. Subir el firmware:
+~/.platformio/penv/bin/pio run -e esp32dev -t upload
+# 3. Prender todo con broker abierto a la LAN (pide la clave, abre 3000 y 1883):
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena
+MQTT_CLAVE=miclave ./scripts/prender-todo.sh --esp32
+#    (equivale a: BROKER_LAN=true MQTT_USUARIO=senapark MQTT_CLAVE=miclave MODO_SIMULADO=false npm start
+#     mas: sudo ufw allow 3000/tcp && sudo ufw allow 1883/tcp)
+# 4. Ver el cableado: docs/hardware/conexiones.png
+# 5. Monitor serial del ESP32:
+~/.platformio/penv/bin/pio device monitor
+# Al terminar: sudo ufw delete allow 1883/tcp
+
+=====================================================================
+7. APAGAR AL TERMINAR
+=====================================================================
+# En la terminal del backend: Ctrl+C (cierra tambien el broker MQTT)
+sudo ufw delete allow 3000/tcp            # cerrar el puerto del celular
+# (si uso la regla por red: sudo ufw delete allow from 192.168.1.0/24 to any port 3000 proto tcp)
+sudo systemctl stop postgresql            # opcional
+
+=====================================================================
+8. PROBLEMAS FRECUENTES
+=====================================================================
+# "address already in use :3000" -> hay otro backend corriendo:
+ss -ltnp | grep :3000
+#    cerrarlo (Ctrl+C en su terminal) o:  kill <PID>
+
+# "connection refused" a la base -> PostgreSQL apagado:
+sudo systemctl start postgresql
+
+# El QR sale con una IP que el celular no alcanza (VPN, docker0):
+#    arrancar con PUBLIC_URL=http://<IP-correcta>:3000 (paso 5.4)
+
+# El kiosco da 403 -> se abrio con la IP en vez de http://localhost:3000
+
+# Pantalla en blanco o cambios que no se ven -> volver a compilar:
+cd ~/Descargas/Hola_mundo/Control_Personal_Sena/frontend && npx ng build

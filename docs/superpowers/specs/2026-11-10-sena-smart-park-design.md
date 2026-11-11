@@ -37,13 +37,13 @@ Lo que debe lucir en la demo:
 
 - Que la barrera se abra con MQTT caído o sin autorización.
 - Que la demo dependa de manipular la base de datos a mano para que funcione.
-- Que una falla de un sensor secundario (DHT11, PIR, humedad) bloquee el flujo principal.
+- Que una falla de un sensor secundario (OLED, telemetría) bloquee el flujo principal.
 
 ## 3. Restricciones
 
 - Tiempo: 3 días. Persona: 1. Experiencia: poca en electrónica, buena en web **[decisión del usuario]**.
 - Todo corre en localhost: backend, PostgreSQL y Angular en el computador del usuario (CachyOS). El ESP32 y el celular se conectan por WiFi.
-- Hardware disponible: ESP32, LCD I2C 16x2, OLED SSD1306 0.96" I2C, servo SG90, LM393 (IR), TCRT5000, HC-SR04, HC-SR501 (PIR, posiblemente dos), TTP223B, DHT11, sensor de humedad de suelo FC-28/YL-69 (el "F2PH245002A"), relé JQC-3FF-S-Z suelto (sin módulo), LEDs, resistencias, dos protoboards mini.
+- Hardware en uso: ESP32, LCD I2C 16x2, OLED SSD1306 0.96" I2C, servo SG90, HC-SR04, TTP223B, LEDs rojo y verde, resistencias, protoboards (ver §7).
 - Repo existente: proyecto PlatformIO para ESP32 con `src/main.cpp` que ya conecta a WiFi y a **EMQX en la nube** por MQTT con TLS (puerto 8883) usando PubSubClient, lee el HC-SR04 y escribe en la LCD. Las credenciales son plantillas sin rellenar. Hay ejemplos probados en `ejemplos/` (servo, OLED, PIR, LCD). El código nuevo debe construirse sobre este repo y reutilizar sus pines y librerías.
 - Pines ya usados en los ejemplos del repo: I2C SDA 21, SCL 22 (LCD en 0x27, OLED en 0x3C). En la práctica se movió la OLED a un bus aparte (SDA 16, SCL 17); HC-SR04 TRIG 5 y ECHO 18; servo 13; LEDs 25 (rojo) y 26 (verde); 27 usado como entrada en un ejemplo.
 - El broker EMQX aún no existe: **se crea durante el proyecto, junto con el usuario** **[decisión del usuario]**.
@@ -82,21 +82,21 @@ El celular no tiene login ni botones **[decisión del usuario: la función del c
 ### 6.1 Entrada
 
 1. El celador busca al aprendiz por cédula, elige vehículo, marca **Entrada** y confirma. La LCD muestra el nombre del aprendiz.
-2. El backend valida: aprendiz activo, vehículo registrado y activo, el vehículo no tiene un acceso activo, P01 libre. Si falla, se deniega con motivo y se muestra al celador y en la LCD.
+2. El backend valida: aprendiz activo, vehículo registrado y activo, el vehículo no tiene un acceso activo. Si falla, se deniega con motivo y se muestra al celador y en la LCD.
 3. El backend crea una `autorizacion_qr` (token aleatorio de un solo uso, vigencia 60 s, guardado como hash) y el kiosco muestra el QR. La URL del QR usa la IP local del computador, no `localhost` **[mi decisión]**.
 4. El aprendiz escanea. La página móvil consume el token (se marca como usado) y pasa la autorización a `ESPERANDO_VEHICULO`.
-5. El backend espera a que el sensor LM393 (presencia en la barrera) reporte vehículo. Si no aparece en un tiempo límite (30 s, ajustable), la autorización caduca y se registra el evento `AUTORIZADO_SIN_VEHICULO` **[mi decisión]**.
+5. El backend espera a que el HC-SR04 (vehículo frente a la barrera) reporte presencia. Si no aparece en un tiempo límite (30 s, ajustable), la autorización caduca y se registra el evento `AUTORIZADO_SIN_VEHICULO` **[mi decisión]**.
 6. Con vehículo presente, el backend publica el comando de apertura con un `cmd_id` único. El ESP32 abre el servo y confirma por MQTT.
-7. El TCRT5000 detecta el paso. El ESP32 cierra la barrera cuando confirmó el paso y la zona está libre, o por tiempo máximo si el vehículo nunca pasó. Nunca cierra con algo en la zona del TCRT5000.
-8. El HC-SR04 reporta P01 ocupado. El backend registra el acceso como `DENTRO`, con hora de entrada y puesto P01. Si P01 no se ocupa en un tiempo límite (30 s), evento `ENTRADA_SIN_OCUPACION` (inconsistencia).
+7. El ESP32 deduce el paso cuando el vehículo, que estaba frente al HC-SR04 con la barrera abierta, deja de verse, y publica `cruce`. El backend ordena cerrar. Si el vehículo no cruza, el tiempo máximo cierra la barrera (`VEHICULO_NO_CRUZO`).
+8. Tras el cruce, el backend espera `ESTACIONAR_MS` (3 s por defecto), registra el acceso como `DENTRO` con hora de entrada y puesto P01, y marca P01 ocupado desde la base de datos (P01 no tiene sensor).
 
 ### 6.2 Salida
 
 Igual que la entrada, con estas diferencias:
 
-- El celador marca **Salida**. El backend exige que exista un acceso `DENTRO` de ese vehículo y que P01 esté ocupado.
-- El sensor LM393 debe detectar el vehículo en la barrera.
-- Tras el paso (TCRT5000), el backend espera que el HC-SR04 reporte P01 libre. Solo entonces cierra el acceso como `FINALIZADO` y calcula la permanencia. Si P01 sigue ocupado, el acceso no se cierra y queda evento `SALIDA_SIN_LIBERAR`.
+- El celador marca **Salida**. El backend exige que exista un acceso `DENTRO` de ese vehículo.
+- El HC-SR04 debe ver el vehículo frente a la barrera.
+- Tras el cruce, el backend espera `ESTACIONAR_MS`, cierra el acceso como `FINALIZADO`, calcula la permanencia y marca P01 libre.
 
 ### 6.3 Inconsistencias que se registran como evento
 
@@ -116,28 +116,24 @@ Igual que la entrada, con estas diferencias:
 5. El QR es de un solo uso y caduca en 60 s. No contiene datos personales, solo el token.
 6. Si el ESP32 pierde MQTT, la barrera queda **cerrada** y la LCD lo indica. Ningún comando de apertura se ejecuta dos veces ni con más de unos segundos de antigüedad (`cmd_id` y vigencia).
 
-## 7. Hardware y pines (propuesta; el usuario la valida al armar)
+## 7. Hardware y pines (revisión 2026-11-11, definida por el usuario)
 
-Alimentación: ESP32 por USB. Protoboard A: riel de 5 V tomado de VIN (servo, HC-SR04, PIR). Protoboard B: riel de 3,3 V (LM393, TCRT5000, TTP223B, DHT11, FC-28, OLED). La LCD va en el riel de 5 V (con 3,3 V la mayoría de módulos I2C 16x2 se ven tenues o no se leen). Los GND de las dos protoboards y del ESP32 van unidos. ECHO del HC-SR04 entrega 5 V y pasa por divisor de voltaje (1 kΩ + 2 kΩ) antes del ESP32. Si el servo reinicia el ESP32 al moverse, se agrega un condensador en el riel o fuente aparte.
+Se retiran LM393, TCRT5000, HC-SR501, DHT11 y FC-28. El HC-SR04 pasa de vigilar P01 a vigilar la aproximación a la barrera. No lleva relé.
+
+Alimentación: ESP32 por USB. Riel de 5 V tomado de VIN: servo, HC-SR04 y LCD. Riel de 3,3 V: OLED y TTP223B. Los GND de todo van unidos. ECHO del HC-SR04 entrega 5 V y pasa por divisor de resistencias (100 Ω arriba y 220 Ω a GND, ≈3,4 V) antes del ESP32. Si el servo reinicia el ESP32 al moverse, se agrega un condensador (470 µF) en el riel de 5 V o una fuente aparte.
 
 | Función | Componente | GPIO |
 |---|---|---|
 | I2C SDA / SCL | LCD 0x27 | 21 / 22 |
 | I2C aparte (Wire1) SDA / SCL | OLED 0x3C | 16 / 17 |
-| Disparo / eco P01 | HC-SR04 | 5 / 18 (eco con divisor) |
+| Vehículo cerca de la barrera (habilita el escaneo del QR) | HC-SR04 TRIG / ECHO | 5 / 18 (eco con divisor) |
 | Barrera | Servo SG90 | 13 |
 | LED rojo / verde | indicadores | 25 / 26 |
-| Presencia en la barrera | LM393 (DO) | 34 |
-| Paso por la barrera | TCRT5000 (DO) | 35 |
 | Mantenimiento / apertura manual | TTP223B | 27 |
-| Movimiento en la zona | HC-SR501 | 32 |
-| Temperatura y humedad | DHT11 | 4 |
-| Humedad de suelo (extra) | FC-28 analógico | 39 |
-| Señalización auxiliar (al final, con transistor y diodo) | Relé JQC-3FF-S-Z | 23 |
 
-Los pines 34, 35 y 39 son solo de entrada, lo cual es correcto para estos sensores. Prioridad de los sensores: LM393, TCRT5000 y HC-SR04 son críticos. Los demás son complementarios y su fallo no debe bloquear el flujo.
+Sensado sin LM393 ni TCRT5000: el HC-SR04 es el único sensor de vehículo. «Vehículo presente» = distancia menor al umbral durante varias lecturas seguidas. «Pasó» = estuvo presente, la barrera abrió y dejó de estar presente. P01 ya no tiene sensor: el backend lo marca ocupado al finalizar una entrada y libre al finalizar una salida. Prioridad: HC-SR04 y servo son críticos; el resto no bloquea el flujo.
 
-Pantallas del ESP32: la LCD muestra instrucciones y el nombre del aprendiz, y el resultado de la autorización. La OLED muestra estado del sistema (WiFi, MQTT, P01).
+Pantallas del ESP32: la LCD muestra instrucciones, el nombre del aprendiz y el resultado de la autorización. La OLED rota páginas cada 4 s: (1) estado: WiFi, MQTT, barrera y vehículo; (2) distancia del HC-SR04 en grande; (3) barrera: estado, ángulo y LED; (4) red: SSID, IP y señal; (5) sistema: tiempo encendido, memoria libre y broker; (6) último mensaje recibido y texto de la LCD.
 
 ## 8. Comunicación MQTT (propuesta de contrato)
 
@@ -146,10 +142,9 @@ Prefijo `senapark/`. Mensajes en JSON. El backend es la única fuente de decisi�
 ESP32 → backend:
 
 - `senapark/estado`: `online`/`offline`, con Last Will y retenido.
-- `senapark/sensores/entrada`: `{presente: bool}` en cada cambio.
-- `senapark/sensores/paso`: `{evento: "cruce"}`.
-- `senapark/sensores/p01`: `{ocupado: bool, distancia_cm}` en cada cambio, con histéresis.
-- `senapark/ambiente`: `{temp, hum, movimiento}` periódico.
+- `senapark/sensores/entrada`: `{presente: bool, distancia_cm}` en cada cambio de presencia, cuando la distancia varía 3 cm (máx. cada 0,5 s) y cada 5 s como latido.
+- `senapark/sensores/paso`: `{evento: "cruce"}`, deducido por el firmware con el HC-SR04.
+- `senapark/telemetria`: `{rssi, uptime_s, ip, heap, angulo}` cada 5 s.
 - `senapark/barrera/estado`: `{estado: "abierta"|"cerrada", cmd_id}`.
 - `senapark/manual`: solicitud de apertura o de modo mantenimiento hecha con el TTP223B. Es solo una solicitud: el backend la aprueba o la rechaza y queda en el historial. El ESP32 nunca abre por su cuenta. **[mi decisión]**
 
@@ -177,23 +172,23 @@ Sin tablas de usuarios ni roles, porque no hay login.
 
 ## 10. Estados y seguridad ante fallos
 
-Máquina de estados por autorización en el backend: `CREADA → ESPERANDO_VEHICULO → AUTORIZADA → BARRERA_ABIERTA → CRUZANDO → (ENTRADA: P01 OCUPADO | SALIDA: P01 LIBRE) → FINALIZADA`. Estados de salida lateral: `DENEGADA`, `EXPIRADA`, `ERROR_SENSOR`, `ERROR_MQTT`, `TIEMPO_AGOTADO`. El ESP32 mantiene su propia máquina mínima (`CERRADA`, `ABRIENDO`, `ABIERTA`, `CERRANDO`, `SEGURO`) y entra en `SEGURO` (barrera cerrada) si pierde WiFi o MQTT.
+Máquina de estados por autorización en el backend: `CREADA → ESPERANDO_VEHICULO → AUTORIZADA → BARRERA_ABIERTA → CRUZANDO → (espera ESTACIONAR_MS) → FINALIZADA`. Estados de salida lateral: `DENEGADA`, `EXPIRADA`, `ERROR_SENSOR`, `ERROR_MQTT`, `TIEMPO_AGOTADO`. El ESP32 mantiene su propia máquina mínima (`CERRADA`, `ABRIENDO`, `ABIERTA`, `CERRANDO`, `SEGURO`) y entra en `SEGURO` (barrera cerrada) si pierde WiFi o MQTT.
 
 ## 11. Orden de construcción y recortes
 
 Plan de 3 días (guía, lo ajusta el plan de implementación):
 
-1. **Día 1, hardware y MQTT.** EMQX creado, ESP32 conectado, servo, LM393, TCRT5000, HC-SR04 y LCD funcionando y publicando por MQTT. Diagrama de conexiones validado.
+1. **Día 1, hardware y MQTT.** EMQX creado, ESP32 conectado, servo, HC-SR04 y LCD funcionando y publicando por MQTT. Diagrama de conexiones validado.
 2. **Día 2, backend, base de datos y kiosco.** PostgreSQL, reglas, máquina de estados, MQTT en el backend, panel del celador, QR.
 3. **Día 3, vista móvil, integración y ensayo.** Página móvil, tiempo real, pruebas de casos límite, ensayo completo de la demo.
 
-Si el tiempo aprieta, se recorta en este orden: relé, FC-28, DHT11, PIR, OLED, estadísticas y gráficas. Nunca se recortan: MQTT, QR de un solo uso, verificación física con LM393 y TCRT5000, confirmación de P01 con HC-SR04, historial.
+Si el tiempo aprieta, se recorta en este orden: OLED, estadísticas y gráficas. Nunca se recortan: MQTT, QR de un solo uso, verificación física con el HC-SR04, historial.
 
 ## 12. Riesgos conocidos
 
 - **Red de la demo:** ESP32, computador y celular deben estar en la misma red, y el ESP32 y el backend necesitan salida a internet por el puerto 8883 hacia EMQX. Una red institucional puede bloquear el puerto o aislar clientes. Plan B: hotspot del celular o router propio.
 - **Firewall del computador:** debe permitir conexiones entrantes al puerto del backend y de Angular desde la red local.
-- **Sensor de presencia/paso en una maqueta pequeña:** el LM393 y el TCRT5000 requieren calibración por la distancia al carrito y la luz ambiente.
+- **Sensor de presencia/paso en una maqueta pequeña:** el HC-SR04 requiere calibrar el umbral (20 cm con histéresis a 28 cm) según el tamaño del carrito.
 - **Servo y reinicios:** brownouts del ESP32 al mover el SG90.
 - **Una sola persona:** el riesgo mayor es el tiempo, por eso el recorte en §11.
 
@@ -214,4 +209,4 @@ Si el tiempo aprieta, se recorta en este orden: relé, FC-28, DHT11, PIR, OLED, 
 - **Escaneo:** el celular usa su cámara nativa, que abre la URL. No se construye un lector de QR dentro de la app.
 - **Estado inicial de P01:** si al arrancar P01 aparece ocupado sin un acceso `DENTRO`, se registra el evento `P01_OCUPADO_SIN_ACCESO` y se bloquean las entradas hasta que se resuelva.
 - **Reinicio de la demo:** el kiosco tiene un botón "Reiniciar demo" que cierra accesos activos y limpia autorizaciones pendientes, para ensayar varias veces sin tocar la base de datos.
-- **Modo simulado:** el kiosco tiene un modo oculto de pruebas que permite simular las lecturas de LM393, TCRT5000 y HC-SR04 (publicando por MQTT como si fuera el ESP32). Sirve para desarrollar el backend y para ensayar la demo si un sensor falla.
+- **Modo simulado:** el kiosco tiene un modo oculto de pruebas que permite simular las lecturas del HC-SR04 (distancia y cruce) (publicando por MQTT como si fuera el ESP32). Sirve para desarrollar el backend y para ensayar la demo si un sensor falla.
