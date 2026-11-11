@@ -34,7 +34,7 @@ describe('flujo de entrada', () => {
   it('no publica abrir mientras no haya vehículo en la entrada', async () => {
     await s.autorizar();
     expect(barrera(s)).toHaveLength(0);
-    expect(s.flujo.autorizacionActiva()).toMatchObject({ estado: 'ESPERANDO_VEHICULO', direccion: 'ENTRADA', aprendiz: 'Fabio Zorro', placa: 'ABC123' });
+    expect(s.flujo.autorizacionActiva()).toMatchObject({ estado: 'ESPERANDO_VEHICULO', direccion: 'ENTRADA', aprendiz: 'Fabio Zorro', placa: 'ABC123', tipo: 'CARRO' });
   });
   it('con el vehículo ya presente al confirmar abre de inmediato', async () => {
     await s.hw({ tipo: 'entrada', presente: true });

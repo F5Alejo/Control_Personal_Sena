@@ -26,8 +26,8 @@ await migrar(pool);
 let urlMqtt = config.mqtt.url;
 let broker: { cerrar(): Promise<void> } | null = null;
 if (!urlMqtt) {
-  if (!config.modoSimulado) throw new Error('Falta MQTT_URL (o use MODO_SIMULADO=true para un broker local)');
-  try { broker = await iniciarBrokerDev(1883); } catch (e) {
+  if (!config.modoSimulado && !config.brokerLan) throw new Error('Falta MQTT_URL (use MODO_SIMULADO=true o BROKER_LAN=true para un broker local)');
+  try { broker = await iniciarBrokerDev(1883, { lan: config.brokerLan, usuario: config.mqtt.usuario, clave: config.mqtt.clave }); } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw e;
     console.log('Ya hay un broker en el puerto 1883: se reutiliza');
   }

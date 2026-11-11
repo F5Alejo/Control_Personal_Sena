@@ -15,11 +15,11 @@ export interface DepsFlujo {
   pool: pg.Pool; reloj: Reloj; estado: EstadoHardware; publicador: Publicador; emisor: Emisor;
   temporizador: Temporizador; tiempos: Tiempos; idComando?: () => string;
 }
-export interface AutorizacionActiva { id: number; estado: EstadoAutorizacion; direccion: Direccion; aprendiz: string; placa: string }
+export interface AutorizacionActiva { id: number; estado: EstadoAutorizacion; direccion: Direccion; aprendiz: string; placa: string; tipo: string }
 
 interface Contexto {
   id: number; direccion: Direccion; estado: EstadoAutorizacion; aprendizId: number; vehiculoId: number;
-  aprendiz: string; placa: string; accesoId: number | null; cmdAbrir: string | null; cancelar: (() => void) | null;
+  aprendiz: string; placa: string; tipo: string; accesoId: number | null; cmdAbrir: string | null; cancelar: (() => void) | null;
 }
 
 const MS_IDLE_LCD = 5000;
@@ -103,18 +103,18 @@ export class FlujoAcceso {
 
   autorizacionActiva(): AutorizacionActiva | null {
     const c = this.actual;
-    return c ? { id: c.id, estado: c.estado, direccion: c.direccion, aprendiz: c.aprendiz, placa: c.placa } : null;
+    return c ? { id: c.id, estado: c.estado, direccion: c.direccion, aprendiz: c.aprendiz, placa: c.placa, tipo: c.tipo } : null;
   }
 
   alConfirmarToken(autorizacionId: number): Promise<void> {
     return this.encolar(async () => {
       if (this.actual) return;
       const r = await this.d.pool.query(
-        `SELECT q.id, q.direccion, q.aprendiz_id, q.vehiculo_id, a.nombre, v.placa FROM autorizaciones_qr q
+        `SELECT q.id, q.direccion, q.aprendiz_id, q.vehiculo_id, a.nombre, v.placa, v.tipo FROM autorizaciones_qr q
          JOIN aprendices a ON a.id = q.aprendiz_id JOIN vehiculos v ON v.id = q.vehiculo_id WHERE q.id = $1`, [autorizacionId]);
       const x = r.rows[0];
       if (!x) return;
-      const ctx: Contexto = { id: x.id, direccion: x.direccion, estado: 'ESPERANDO_VEHICULO', aprendizId: x.aprendiz_id, vehiculoId: x.vehiculo_id, aprendiz: x.nombre, placa: x.placa, accesoId: null, cmdAbrir: null, cancelar: null };
+      const ctx: Contexto = { id: x.id, direccion: x.direccion, estado: 'ESPERANDO_VEHICULO', aprendizId: x.aprendiz_id, vehiculoId: x.vehiculo_id, aprendiz: x.nombre, placa: x.placa, tipo: x.tipo, accesoId: null, cmdAbrir: null, cancelar: null };
       this.actual = ctx;
       await this.evento('AUTORIZACION_CONFIRMADA', { autorizacionId: ctx.id, direccion: ctx.direccion, aprendiz: ctx.aprendiz, placa: ctx.placa });
       if (!this.d.estado.snapshot().esp32Online) {

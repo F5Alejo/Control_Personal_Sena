@@ -15,6 +15,8 @@ export interface Config {
   vigenciaQrSeg: number;
   tiempos: Tiempos;
   modoSimulado: boolean;
+  /** Broker aedes local abierto a la red (ESP32 real sin EMQX). */
+  brokerLan: boolean;
 }
 
 const vacio = (v: unknown) => (v === '' ? undefined : v);
@@ -26,6 +28,7 @@ const esquema = z.object({
   MQTT_USUARIO: z.preprocess(vacio, z.string().optional()),
   MQTT_CLAVE: z.preprocess(vacio, z.string().optional()),
   MQTT_CA: z.preprocess(vacio, z.string().optional()),
+  BROKER_LAN: z.preprocess(vacio, z.enum(['true', 'false']).default('false')),
   MODO_SIMULADO: z.preprocess(vacio, z.enum(['true', 'false']).default('false')),
   ESPERA_VEHICULO_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(30000)),
   ESPERA_CRUCE_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(15000)),
@@ -47,5 +50,6 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
       comandoVigenciaMs: 5000,
     },
     modoSimulado: e.MODO_SIMULADO === 'true',
+    brokerLan: e.BROKER_LAN === 'true',
   };
 }
