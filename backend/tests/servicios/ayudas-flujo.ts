@@ -32,3 +32,17 @@ export async function montarFlujo(pool: pg.Pool) {
   const eventos = async (tipo: string) => (await pool.query('SELECT detalle FROM eventos WHERE tipo=$1', [tipo])).rows;
   return { reloj, estado, pub, emisor, temp, flujo, a, v, autorizar, hw, avanzar, estadoAut, acceso, eventos };
 }
+
+export type Montaje = Awaited<ReturnType<typeof montarFlujo>>;
+
+/** Deja al vehículo DENTRO por el camino normal. Usa los cmd-ids del montaje. */
+export async function entrarCompleto(s: Montaje): Promise<void> {
+  const antes = s.pub.de('senapark/cmd/barrera').length;
+  await s.autorizar('ENTRADA');
+  await s.hw({ tipo: 'entrada', presente: true });
+  const cmd = s.pub.de('senapark/cmd/barrera')[antes].payload.cmd_id;
+  await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: cmd });
+  await s.hw({ tipo: 'cruce' });
+  await s.hw({ tipo: 'p01', ocupado: true });
+  await s.hw({ tipo: 'entrada', presente: false });
+}

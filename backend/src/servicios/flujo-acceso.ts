@@ -4,7 +4,10 @@ import type { Emisor, Publicador, Reloj, Temporizador } from '../dominio/contrat
 import type { Tiempos } from '../config/env.js';
 import type { Direccion, EstadoAutorizacion, TipoEvento } from '../dominio/tipos.js';
 import type { EstadoHardware } from '../hardware/estado.js';
+import { ESTADOS_AUTORIZACION_VIVA } from '../dominio/tipos.js';
+import { ErrorHttp } from '../errores.js';
 import { registrarEvento } from '../eventos/eventos.repo.js';
+import { accesoActivoEnP01 } from '../modulos/accesos/accesos.repo.js';
 import { TOPICS } from '../mqtt/topics.js';
 import { mensajeLcd } from './texto-lcd.js';
 
@@ -34,6 +37,63 @@ export class FlujoAcceso {
     estado.on('barrera', (b: { estado: string; cmdId?: string }) => this.encolar(() => this.alBarrera(b)));
     estado.on('cruce', () => this.encolar(() => this.alCruce()));
     estado.on('p01', (ocupado: boolean) => this.encolar(() => this.alP01(ocupado)));
+    estado.on('online', (valor: boolean) => this.encolar(() => this.alCambiarOnline(valor)));
+    estado.on('manual', (m: { solicitud: string }) => this.encolar(() => this.evento('SOLICITUD_MANUAL', m)));
+  }
+
+  /** El broker o el ESP32 dejaron de responder: cierra el flujo en curso sin dejar accesos a medias. */
+  alPerderMqtt(): Promise<void> {
+    return this.encolar(async () => {
+      const c = this.actual;
+      if (!c) return;
+      await this.revertirAcceso(c);
+      await this.cerrarFlujo(c, 'ERROR_MQTT');
+    });
+  }
+
+  /** Cierra lo que quedó a medias en un reinicio del servidor. Un solo evento resumen. */
+  recuperarAlArrancar(): Promise<void> {
+    return this.encolar(async () => {
+      this.descartarActual();
+      const au = await this.d.pool.query(
+        `UPDATE autorizaciones_qr SET estado = 'EXPIRADA', motivo = 'Reinicio del servidor', fecha_modificacion = now()
+         WHERE estado = ANY($1) RETURNING id`, [ESTADOS_AUTORIZACION_VIVA]);
+      const an = await this.d.pool.query("UPDATE accesos SET estado = 'ANULADO', fecha_modificacion = now() WHERE estado = 'ENTRANDO' RETURNING id");
+      const re = await this.d.pool.query("UPDATE accesos SET estado = 'DENTRO', fecha_modificacion = now() WHERE estado = 'SALIENDO' RETURNING id");
+      await this.sincronizarEspacio();
+      if (au.rowCount || an.rowCount || re.rowCount) {
+        await this.evento('RECUPERACION_ARRANQUE', { autorizaciones: au.rowCount, accesosAnulados: an.rowCount, accesosRestaurados: re.rowCount });
+      }
+    });
+  }
+
+  /** Deja P01 libre y sin flujos activos para otro ensayo. El historial se conserva. */
+  reiniciarDemo(): Promise<void> {
+    return this.encolar(async () => {
+      this.descartarActual();
+      await this.d.pool.query(
+        `UPDATE autorizaciones_qr SET estado = 'EXPIRADA', motivo = 'Demo reiniciada', fecha_modificacion = now() WHERE estado = ANY($1)`,
+        [ESTADOS_AUTORIZACION_VIVA]);
+      await this.d.pool.query("UPDATE accesos SET estado = 'ANULADO', fecha_modificacion = now() WHERE estado IN ('ENTRANDO','DENTRO','SALIENDO')");
+      await this.sincronizarEspacio();
+      await this.evento('DEMO_REINICIADA', {});
+      await this.publicar(TOPICS.cmdLcd, mensajeLcd('IDLE'));
+    });
+  }
+
+  /** Abre la barrera por orden del celador y la cierra sola pasado el tiempo de cruce. */
+  async aperturaManual(motivo: string): Promise<void> {
+    if (this.actual) throw new ErrorHttp(409, 'Hay un acceso en curso');
+    if (!(await this.publicar(TOPICS.cmdBarrera, this.comandoBarrera('abrir')))) throw new ErrorHttp(503, 'Sin conexión con la barrera');
+    await this.encolar(() => this.evento('APERTURA_MANUAL', { motivo }));
+    this.d.temporizador.programar(this.d.tiempos.esperaCruceMs, () => {
+      if (!this.actual) void this.publicar(TOPICS.cmdBarrera, this.comandoBarrera('cerrar'));
+    });
+  }
+
+  /** P01 figura ocupado por el sensor pero ningún acceso lo respalda. */
+  async bloqueoP01(): Promise<boolean> {
+    return this.d.estado.snapshot().p01Ocupado === true && !(await accesoActivoEnP01(this.d.pool));
   }
 
   /** Resuelve cuando se procesaron todos los eventos en cola (útil en pruebas). */
@@ -116,17 +176,24 @@ export class FlujoAcceso {
   // ---------- reglas de entrada ----------
   private async autorizar(ctx: Contexto): Promise<void> {
     ctx.cancelar?.(); ctx.cancelar = null;
-    const acc = await this.d.pool.query(
-      `INSERT INTO accesos (aprendiz_id, vehiculo_id, espacio_id, autorizacion_id, entrada_en, estado)
-       VALUES ($1,$2,(SELECT id FROM espacios WHERE codigo='P01'),$3,$4,'ENTRANDO') RETURNING id`,
-      [ctx.aprendizId, ctx.vehiculoId, ctx.id, this.d.reloj.ahora()]);
-    ctx.accesoId = acc.rows[0].id;
-    this.d.emisor.emitir('acceso:cambio', { accesoId: ctx.accesoId, estado: 'ENTRANDO' });
+    if (ctx.direccion === 'ENTRADA') {
+      const acc = await this.d.pool.query(
+        `INSERT INTO accesos (aprendiz_id, vehiculo_id, espacio_id, autorizacion_id, entrada_en, estado)
+         VALUES ($1,$2,(SELECT id FROM espacios WHERE codigo='P01'),$3,$4,'ENTRANDO') RETURNING id`,
+        [ctx.aprendizId, ctx.vehiculoId, ctx.id, this.d.reloj.ahora()]);
+      ctx.accesoId = acc.rows[0].id;
+      this.d.emisor.emitir('acceso:cambio', { accesoId: ctx.accesoId, estado: 'ENTRANDO' });
+    } else {
+      const acc = await this.d.pool.query("SELECT id FROM accesos WHERE vehiculo_id = $1 AND estado IN ('DENTRO','SALIENDO')", [ctx.vehiculoId]);
+      if (!acc.rows[0]) { await this.cerrarFlujo(ctx, 'DENEGADA', 'El vehículo no está dentro'); return; }
+      ctx.accesoId = acc.rows[0].id;
+      await this.cambiarAcceso(ctx, 'SALIENDO');
+    }
     await this.transicion(ctx, 'AUTORIZADA');
     const cmd = this.comandoBarrera('abrir');
     ctx.cmdAbrir = cmd.cmd_id;
     if (!(await this.publicar(TOPICS.cmdBarrera, cmd))) {
-      await this.cambiarAcceso(ctx, 'ANULADO');
+      await this.revertirAcceso(ctx);
       await this.cerrarFlujo(ctx, 'ERROR_MQTT');
       return;
     }
@@ -153,11 +220,59 @@ export class FlujoAcceso {
 
   private async alP01(ocupado: boolean): Promise<void> {
     const c = this.actual;
-    if (!c || c.estado !== 'CRUZANDO' || c.direccion !== 'ENTRADA' || !ocupado) return;
-    await this.d.pool.query("UPDATE espacios SET estado = 'OCUPADO', fecha_modificacion = now() WHERE codigo = 'P01'");
-    await this.cambiarAcceso(c, 'DENTRO');
-    await this.evento('ENTRADA_REGISTRADA', { accesoId: c.accesoId, aprendiz: c.aprendiz, placa: c.placa });
-    await this.cerrarFlujo(c, 'FINALIZADA');
+    if (c && c.estado === 'CRUZANDO' && c.direccion === 'ENTRADA' && ocupado) {
+      await this.d.pool.query("UPDATE espacios SET estado = 'OCUPADO', fecha_modificacion = now() WHERE codigo = 'P01'");
+      await this.cambiarAcceso(c, 'DENTRO');
+      await this.evento('ENTRADA_REGISTRADA', { accesoId: c.accesoId, aprendiz: c.aprendiz, placa: c.placa });
+      await this.cerrarFlujo(c, 'FINALIZADA');
+      return;
+    }
+    if (c && c.estado === 'CRUZANDO' && c.direccion === 'SALIDA' && !ocupado) {
+      const r = await this.d.pool.query('SELECT entrada_en FROM accesos WHERE id = $1', [c.accesoId]);
+      const ahora = this.d.reloj.ahora();
+      const permanenciaSeg = Math.round((ahora.getTime() - new Date(r.rows[0].entrada_en).getTime()) / 1000);
+      await this.cambiarAcceso(c, 'FINALIZADO', true);
+      await this.d.pool.query("UPDATE espacios SET estado = 'LIBRE', fecha_modificacion = now() WHERE codigo = 'P01'");
+      await this.evento('SALIDA_REGISTRADA', { accesoId: c.accesoId, aprendiz: c.aprendiz, placa: c.placa, permanencia_seg: permanenciaSeg });
+      await this.cerrarFlujo(c, 'FINALIZADA');
+      return;
+    }
+    await this.registrarInconsistencia(ocupado);
+  }
+
+  private async registrarInconsistencia(ocupado: boolean): Promise<void> {
+    if (ocupado) {
+      if (!(await accesoActivoEnP01(this.d.pool))) await this.evento('P01_OCUPADO_SIN_ACCESO', {});
+      return;
+    }
+    const r = await this.d.pool.query("SELECT id, estado FROM accesos WHERE estado IN ('DENTRO','SALIENDO') LIMIT 1");
+    if (r.rows[0]) await this.evento('P01_LIBERADO_SIN_SALIDA', { accesoId: r.rows[0].id });
+  }
+
+  private async alCambiarOnline(valor: boolean): Promise<void> {
+    await this.evento(valor ? 'ESP32_ONLINE' : 'ESP32_OFFLINE', {});
+    if (!valor) {
+      const c = this.actual;
+      if (!c) return;
+      await this.revertirAcceso(c);
+      await this.cerrarFlujo(c, 'ERROR_MQTT');
+    }
+  }
+
+  /** Un flujo que no terminó: la entrada se anula, la salida deja al vehículo DENTRO. */
+  private async revertirAcceso(ctx: Contexto): Promise<void> {
+    await this.cambiarAcceso(ctx, ctx.direccion === 'ENTRADA' ? 'ANULADO' : 'DENTRO');
+  }
+
+  private descartarActual(): void {
+    this.actual?.cancelar?.();
+    this.actual = null;
+  }
+
+  private async sincronizarEspacio(): Promise<void> {
+    await this.d.pool.query(
+      `UPDATE espacios SET fecha_modificacion = now(), estado = CASE WHEN EXISTS
+         (SELECT 1 FROM accesos a WHERE a.espacio_id = espacios.id AND a.estado IN ('DENTRO','SALIENDO')) THEN 'OCUPADO' ELSE 'LIBRE' END`);
   }
 
   private async alVencerEspera(ctx: Contexto): Promise<void> {
@@ -169,15 +284,21 @@ export class FlujoAcceso {
   private async alVencerCruce(ctx: Contexto): Promise<void> {
     if (this.actual !== ctx || (ctx.estado !== 'AUTORIZADA' && ctx.estado !== 'BARRERA_ABIERTA')) return;
     await this.publicar(TOPICS.cmdBarrera, this.comandoBarrera('cerrar'));
-    await this.cambiarAcceso(ctx, 'ANULADO');
+    await this.revertirAcceso(ctx);
     await this.evento('VEHICULO_NO_CRUZO', { autorizacionId: ctx.id, aprendiz: ctx.aprendiz, placa: ctx.placa });
     await this.cerrarFlujo(ctx, 'TIEMPO_AGOTADO', 'El vehículo no cruzó');
   }
 
   private async alVencerP01(ctx: Contexto): Promise<void> {
     if (this.actual !== ctx || ctx.estado !== 'CRUZANDO') return;
-    await this.cambiarAcceso(ctx, 'ANULADO');
-    await this.evento('ENTRADA_SIN_OCUPACION', { autorizacionId: ctx.id, aprendiz: ctx.aprendiz, placa: ctx.placa });
-    await this.cerrarFlujo(ctx, 'TIEMPO_AGOTADO', 'P01 no se ocupó');
+    const datos = { autorizacionId: ctx.id, aprendiz: ctx.aprendiz, placa: ctx.placa };
+    if (ctx.direccion === 'ENTRADA') {
+      await this.cambiarAcceso(ctx, 'ANULADO');
+      await this.evento('ENTRADA_SIN_OCUPACION', datos);
+      await this.cerrarFlujo(ctx, 'TIEMPO_AGOTADO', 'P01 no se ocupó');
+    } else {
+      await this.evento('SALIDA_SIN_LIBERAR', datos);
+      await this.cerrarFlujo(ctx, 'TIEMPO_AGOTADO', 'P01 sigue ocupado');
+    }
   }
 }
