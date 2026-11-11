@@ -36,6 +36,8 @@ export class RegistroAprendizComponent {
   protected datos = signal<Record<string, string>>({});
   protected error = signal('');
   protected guardando = signal(false);
+  /** Aprendiz ya creado cuando el vehículo falló: el reintento no lo vuelve a crear. */
+  private creado: { cedula: string; id: number } | null = null;
 
   protected poner(n: string, v: string): void {
     this.datos.update(d => ({ ...d, [n]: n === 'placa' ? v.toUpperCase() : v }));
@@ -48,8 +50,11 @@ export class RegistroAprendizComponent {
     if (!cedula || !nombre || !placa) { this.error.set('Cédula, nombre y placa son obligatorios.'); return; }
     this.guardando.set(true); this.error.set('');
     try {
-      const a = await this.api.crearAprendiz({ cedula, nombre, ficha: d['ficha'] || undefined, programa: d['programa'] || undefined, jornada: d['jornada'] || undefined });
-      await this.api.crearVehiculo(a.id, { placa, tipo: (d['tipo'] || 'CARRO').toUpperCase(), marca: d['marca'] || undefined, color: d['color'] || undefined });
+      if (this.creado?.cedula !== cedula) {
+        const a = await this.api.crearAprendiz({ cedula, nombre, ficha: d['ficha'] || undefined, programa: d['programa'] || undefined, jornada: d['jornada'] || undefined });
+        this.creado = { cedula, id: a.id };
+      }
+      await this.api.crearVehiculo(this.creado.id, { placa, tipo: (d['tipo'] || 'CARRO').toUpperCase(), marca: d['marca'] || undefined, color: d['color'] || undefined });
       this.guardado.emit(cedula);
     } catch { this.error.set('No se pudo guardar (¿cédula o placa repetidas?).'); }
     finally { this.guardando.set(false); }

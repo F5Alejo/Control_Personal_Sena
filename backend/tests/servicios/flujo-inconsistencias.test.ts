@@ -1,10 +1,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { crearPoolPrueba, limpiarTablas, prepararBd } from '../ayudas/bd.js';
-import { crearAutorizacion } from '../../src/modulos/autorizaciones/autorizaciones.servicio.js';
+import { consumirToken, crearAutorizacion } from '../../src/modulos/autorizaciones/autorizaciones.servicio.js';
 import { entrarCompleto, montarFlujo, type Montaje } from './ayudas-flujo.js';
 
 const pool = crearPoolPrueba();
 let s: Montaje;
+const deps = () => ({ pool, reloj: s.reloj, estado: s.estado, vigenciaQrSeg: 60 });
 beforeAll(() => prepararBd(pool));
 afterAll(() => pool.end());
 beforeEach(async () => { await limpiarTablas(pool); s = await montarFlujo(pool); });
@@ -38,6 +39,18 @@ describe('inconsistencias sin flujo activo', () => {
   it('la solicitud manual del hardware queda como evento SOLICITUD_MANUAL y no abre nada', async () => {
     await s.hw({ tipo: 'manual', solicitud: 'apertura' });
     expect(await s.eventos('SOLICITUD_MANUAL')).toHaveLength(1);
+    expect(s.pub.de('senapark/cmd/barrera')).toHaveLength(0);
+  });
+  it('ESP32 offline al escanear el QR cierra la autorización con ERROR_MQTT', async () => {
+    const r = await crearAutorizacion(deps(), { aprendizId: s.a.id, vehiculoId: s.v.id, direccion: 'ENTRADA' });
+    if (!r.ok) throw new Error('denegada');
+    await s.hw({ tipo: 'online', valor: false });
+    const c = await consumirToken(deps(), r.token);
+    if (!c.ok) throw new Error('token');
+    await s.flujo.alConfirmarToken(c.autorizacion.id);
+    await s.flujo.esperar();
+    expect(await s.estadoAut()).toBe('ERROR_MQTT');
+    expect(s.flujo.autorizacionActiva()).toBeNull();
     expect(s.pub.de('senapark/cmd/barrera')).toHaveLength(0);
   });
 });

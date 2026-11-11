@@ -94,4 +94,13 @@ describe('flujo de entrada', () => {
     await s.autorizar();
     expect(s.pub.de('senapark/cmd/lcd').at(-1)!.payload).toEqual({ linea1: 'Fabio Zorro', linea2: 'Acerque el carro' });
   });
+  it('P01 que se ocupa antes del cruce igual registra la entrada', async () => {
+    await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true });
+    await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: 'cmd-1' });
+    await s.hw({ tipo: 'p01', ocupado: true });
+    await s.hw({ tipo: 'cruce' });
+    expect(await s.estadoAut()).toBe('FINALIZADA');
+    expect((await s.acceso()).estado).toBe('DENTRO');
+    expect(await s.eventos('P01_OCUPADO_SIN_ACCESO')).toHaveLength(0);
+  });
 });

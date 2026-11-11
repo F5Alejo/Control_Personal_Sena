@@ -34,4 +34,17 @@ describe('RegistroAprendizComponent', () => {
     await guardar();
     expect(api.crearVehiculo).toHaveBeenCalledWith(5, expect.objectContaining({ placa: 'ABC123' }));
   });
+
+  it('si falla el vehículo, el reintento reutiliza el aprendiz ya creado', async () => {
+    const { api, poner, guardar, f } = montar();
+    api.crearVehiculo.mockRejectedValueOnce(new Error('placa repetida'));
+    await f.whenStable();
+    poner('cedula', '77'); poner('nombre', 'Ana'); poner('placa', 'abc123');
+    await guardar();
+    expect(api.crearAprendiz).toHaveBeenCalledTimes(1);
+    poner('placa', 'xyz789');
+    await guardar();
+    expect(api.crearAprendiz).toHaveBeenCalledTimes(1);
+    expect(api.crearVehiculo).toHaveBeenLastCalledWith(5, expect.objectContaining({ placa: 'XYZ789' }));
+  });
 });

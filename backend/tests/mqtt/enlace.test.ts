@@ -1,3 +1,5 @@
+import net from 'node:net';
+import os from 'node:os';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { iniciarBrokerDev } from '../../src/mqtt/broker-dev.js';
 import { conectarMqtt, type ClienteMqtt } from '../../src/mqtt/cliente.js';
@@ -34,5 +36,15 @@ describe('enlace MQTT', () => {
     const c = await conectarMqtt({ url: `mqtt://localhost:${PUERTO}`, clientId: 'test-x' });
     await c.cerrar();
     await expect(c.publicar('senapark/cmd/lcd', {})).rejects.toThrow('MQTT desconectado');
+  });
+  it('el broker de desarrollo no acepta conexiones desde la LAN (solo loopback)', async () => {
+    const ipLan = Object.values(os.networkInterfaces()).flat().find((i) => i && i.family === 'IPv4' && !i.internal)?.address;
+    if (!ipLan) return; // sin interfaz de red externa no hay nada que comprobar
+    const conectado = await new Promise<boolean>((ok) => {
+      const s = net.connect(PUERTO, ipLan);
+      s.once('connect', () => { s.destroy(); ok(true); });
+      s.once('error', () => ok(false));
+    });
+    expect(conectado).toBe(false);
   });
 });

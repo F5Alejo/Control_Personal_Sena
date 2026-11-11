@@ -57,4 +57,16 @@ describe('flujo de salida', () => {
     await entrarCompleto(s);
     expect((await s.acceso()).estado).toBe('DENTRO');
   });
+  it('P01 que se libera antes del cruce igual finaliza la salida (nivel, no flanco)', async () => {
+    await s.autorizar('SALIDA'); await s.hw({ tipo: 'entrada', presente: true });
+    const cmd = s.pub.de('senapark/cmd/barrera').at(-1)!.payload.cmd_id;
+    await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: cmd });
+    await s.hw({ tipo: 'p01', ocupado: false });
+    expect((await s.acceso()).estado).toBe('SALIENDO');
+    await s.hw({ tipo: 'cruce' });
+    expect((await s.acceso()).estado).toBe('FINALIZADO');
+    expect(await s.estadoAut()).toBe('FINALIZADA');
+    expect(await s.eventos('P01_LIBERADO_SIN_SALIDA')).toHaveLength(0);
+    expect(await s.eventos('SALIDA_REGISTRADA')).toHaveLength(1);
+  });
 });

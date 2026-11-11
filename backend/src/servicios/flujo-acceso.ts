@@ -117,6 +117,10 @@ export class FlujoAcceso {
       const ctx: Contexto = { id: x.id, direccion: x.direccion, estado: 'ESPERANDO_VEHICULO', aprendizId: x.aprendiz_id, vehiculoId: x.vehiculo_id, aprendiz: x.nombre, placa: x.placa, accesoId: null, cmdAbrir: null, cancelar: null };
       this.actual = ctx;
       await this.evento('AUTORIZACION_CONFIRMADA', { autorizacionId: ctx.id, direccion: ctx.direccion, aprendiz: ctx.aprendiz, placa: ctx.placa });
+      if (!this.d.estado.snapshot().esp32Online) {
+        await this.cerrarFlujo(ctx, 'ERROR_MQTT', 'El controlador se desconectó');
+        return;
+      }
       await this.transicion(ctx, 'ESPERANDO_VEHICULO');
       this.programar(ctx, this.d.tiempos.esperaVehiculoMs, () => this.alVencerEspera(ctx));
       if (this.d.estado.snapshot().vehiculoEnEntrada) await this.autorizar(ctx);
@@ -216,6 +220,9 @@ export class FlujoAcceso {
     await this.transicion(c, 'CRUZANDO');
     await this.publicar(TOPICS.cmdBarrera, this.comandoBarrera('cerrar'));
     this.programar(c, this.d.tiempos.esperaP01Ms, () => this.alVencerP01(c));
+    // El sensor de P01 pudo cambiar antes del cruce: se evalúa el nivel, no solo el flanco.
+    const p01 = this.d.estado.snapshot().p01Ocupado;
+    if (p01 !== null) await this.alP01(p01);
   }
 
   private async alP01(ocupado: boolean): Promise<void> {
@@ -245,6 +252,7 @@ export class FlujoAcceso {
       if (!(await accesoActivoEnP01(this.d.pool))) await this.evento('P01_OCUPADO_SIN_ACCESO', {});
       return;
     }
+    if (this.actual?.direccion === 'SALIDA') return; // salida en curso: se resuelve al cruzar
     const r = await this.d.pool.query("SELECT id, estado FROM accesos WHERE estado IN ('DENTRO','SALIENDO') LIMIT 1");
     if (r.rows[0]) await this.evento('P01_LIBERADO_SIN_SALIDA', { accesoId: r.rows[0].id });
   }
