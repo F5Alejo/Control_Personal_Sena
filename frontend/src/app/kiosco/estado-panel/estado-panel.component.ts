@@ -15,7 +15,7 @@ import { duracionTexto, senal } from '../../core/escena';
       <dl>
         <div [class.mal]="!s.hardware.esp32Online"><dt>ESP32</dt><dd>{{ s.hardware.esp32Online ? 'En línea' : 'Sin conexión' }}</dd></div>
         <div [class.mal]="!s.hardware.esp32Online"><dt>Vehículo en la entrada</dt><dd>{{ !s.hardware.esp32Online ? 'Sensor sin conexión' : s.hardware.vehiculoEnEntrada ? 'Vehículo presente' : 'Sin vehículo' }}</dd></div>
-        <div [class.mal]="!s.hardware.esp32Online || !!s.hardware.p01Alerta"><dt>Sensor infrarrojo P01</dt><dd>{{ !s.hardware.esp32Online || s.hardware.p01Sensor === null ? 'Sin lectura' : s.hardware.p01Sensor ? 'Vehículo en P01' : 'P01 libre' }}</dd></div>
+        <div [class.mal]="!s.hardware.esp32Online || !!s.hardware.p01Alerta || (s.hardware.p01Sensor === false && p01Registrado(s))"><dt>Sensor infrarrojo P01</dt><dd>{{ !s.hardware.esp32Online || s.hardware.p01Sensor === null ? 'Sin lectura' : s.hardware.p01Sensor ? 'Vehículo en P01' : p01Registrado(s) ? 'Vehículo ausente de P01' : 'P01 libre' }}</dd></div>
         <div><dt>Distancia (HC-SR04)</dt><dd>{{ distancia() }}</dd></div>
         <div><dt>Barrera</dt><dd>{{ barrera() }}@if (s.hardware.telemetria?.angulo !== null && s.hardware.telemetria?.angulo !== undefined) { · {{ s.hardware.telemetria!.angulo }}° }</dd></div>
         @if (s.hardware.telemetria; as t) {
@@ -49,6 +49,7 @@ export class EstadoPanelComponent {
     if (h.barrera === 'desconocida' && h.telemetria?.angulo != null) return h.telemetria.angulo > 45 ? 'Abierta' : 'Cerrada';
     return { abierta: 'Abierta', cerrada: 'Cerrada', desconocida: 'Sin dato' }[h.barrera];
   });
+  protected p01Registrado = (s: { espacios: { codigo: string; ocupado: boolean }[] }) => !!s.espacios.find((e) => e.codigo === 'P01')?.ocupado;
   protected distancia = computed(() => {
     const d = this.e()!.hardware.distanciaCm;
     return d === null ? 'Sin lectura' : `${Math.round(d)} cm`;

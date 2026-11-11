@@ -60,6 +60,22 @@ describe('EscenaParqueaderoComponent', () => {
     await poner(estadoBase({ esp32Online: false }, { espacios: PUESTOS() }));
     expect(el.textContent).toContain('Sin lectura');
   });
+  it('con el aprendiz dentro, el infrarrojo marca verde si el vehículo está en P01 y rojo si no está', async () => {
+    const { el, poner } = montar();
+    const espacios = PUESTOS(); espacios[0] = { codigo: 'P01', ocupado: true, placa: 'ABC123', tipo: 'CARRO', aprendiz: 'Ana Gómez' };
+    await poner(estadoBase({ p01Sensor: true }, { espacios }));
+    const celda = () => el.querySelector('.p01-vigilancia') as HTMLElement;
+    expect(celda().classList).toContain('ok');
+    expect(celda().textContent).toContain('ABC123');
+    await poner(estadoBase({ p01Sensor: false }, { espacios }));
+    expect(celda().classList).toContain('falta');
+    expect(celda().textContent).toContain('Ana Gómez');
+    await poner(estadoBase({ p01Sensor: null }, { espacios }));
+    expect(celda().classList).not.toContain('ok');
+    expect(celda().classList).not.toContain('falta');
+    await poner(estadoBase({ p01Sensor: false }, { espacios: PUESTOS() }));
+    expect(celda().classList).not.toContain('falta');
+  });
   it('en una entrada el vehículo espera en la puerta y al cruzar va a P01', async () => {
     const { el, poner } = montar();
     await poner(estadoBase({}, { autorizacionActiva: aut('ESPERANDO_VEHICULO') } as any));

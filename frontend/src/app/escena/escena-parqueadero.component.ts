@@ -38,7 +38,8 @@ import { VehiculoComponent } from './vehiculo.component';
           <i><b [style.width.%]="aprox() * 100"></b></i></div>
         <div><span class="etq">Vehículo en la barrera</span><strong class="presencia" [class.si]="presente()">{{ presenciaTexto() }}</strong></div>
         <div><span class="etq">Barrera</span><span class="valor">{{ barreraAbierta() ? 'Abierta' : 'Cerrada' }}</span></div>
-        <div><span class="etq">Infrarrojo P01</span><strong class="presencia" [class.si]="p01Visto()">{{ p01Texto() }}</strong></div>
+        <div class="p01-vigilancia" [class.ok]="p01Vigilancia().estado === 'ok'" [class.falta]="p01Vigilancia().estado === 'falta'">
+          <span class="etq">Infrarrojo P01</span><strong class="presencia">{{ p01Vigilancia().texto }}</strong></div>
       </div>
       @if (alertaP01(); as alerta) { <p class="alerta" role="alert">{{ alerta }}</p> }
       <figcaption>
@@ -80,6 +81,10 @@ import { VehiculoComponent } from './vehiculo.component';
     .medidor .valor, .medidor .presencia { font: 600 17px var(--titulo); }
     .medidor .presencia { color: var(--suave); }
     .medidor .presencia.si { color: var(--marca-oscura); }
+    .medidor > .p01-vigilancia.ok { background: var(--marca-tenue); }
+    .medidor > .p01-vigilancia.ok .presencia { color: var(--marca-oscura); }
+    .medidor > .p01-vigilancia.falta { background: var(--alerta-tenue); }
+    .medidor > .p01-vigilancia.falta .presencia { color: var(--alerta); }
     .medidor i { height: 4px; border-radius: 2px; background: var(--linea); overflow: hidden; }
     .medidor b { display: block; height: 100%; background: var(--marca); transition: width .4s; }
     .alerta { margin: 8px 0 0; padding: 8px 12px; border-radius: 10px; background: #fdf0e0; border: 1px solid #e3b877; color: #7a4a05; font-size: 14px; }
@@ -114,11 +119,19 @@ export class EscenaParqueaderoComponent {
     const d = this.estado()?.hardware.distanciaCm;
     return d === null || d === undefined ? 'sin dato' : `${Math.round(d)} cm`;
   });
-  protected p01Visto = computed(() => this.estado()?.hardware.esp32Online === true && this.estado()?.hardware.p01Sensor === true);
-  protected p01Texto = computed(() => {
-    const h = this.estado()?.hardware;
-    if (!h?.esp32Online || h.p01Sensor === null || h.p01Sensor === undefined) return 'Sin lectura';
-    return h.p01Sensor ? 'Vehículo en P01' : 'P01 libre';
+  /** Mientras el aprendiz está dentro, el infrarrojo confirma (verde) o desmiente (rojo) que su vehículo sigue en P01. */
+  protected p01Vigilancia = computed((): { estado: 'ok' | 'falta' | 'libre' | 'sin'; texto: string } => {
+    const e = this.estado();
+    const h = e?.hardware;
+    if (!h?.esp32Online || h.p01Sensor === null || h.p01Sensor === undefined) return { estado: 'sin', texto: 'Sin lectura' };
+    const p01 = e?.espacios.find((x) => x.codigo === 'P01');
+    if (p01?.ocupado) {
+      const quien = [p01.placa, p01.aprendiz].filter(Boolean).join(' · ');
+      return h.p01Sensor
+        ? { estado: 'ok', texto: `En P01${quien ? ' · ' + quien : ''}` }
+        : { estado: 'falta', texto: `Ausente de P01${p01.aprendiz ? ' · ' + p01.aprendiz + ' sigue dentro' : ''}` };
+    }
+    return { estado: 'libre', texto: h.p01Sensor ? 'Vehículo en P01' : 'P01 libre' };
   });
   protected alertaP01 = computed(() => {
     const a = this.estado()?.hardware.p01Alerta;
