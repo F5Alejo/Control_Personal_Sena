@@ -15,6 +15,7 @@ import { duracionTexto, senal } from '../../core/escena';
       <dl>
         <div [class.mal]="!s.hardware.esp32Online"><dt>ESP32</dt><dd>{{ s.hardware.esp32Online ? 'En línea' : 'Sin conexión' }}</dd></div>
         <div [class.mal]="!s.hardware.esp32Online"><dt>Vehículo en la entrada</dt><dd>{{ !s.hardware.esp32Online ? 'Sensor sin conexión' : s.hardware.vehiculoEnEntrada ? 'Vehículo presente' : 'Sin vehículo' }}</dd></div>
+        <div [class.mal]="!s.hardware.esp32Online || !!s.hardware.p01Alerta"><dt>Sensor infrarrojo P01</dt><dd>{{ !s.hardware.esp32Online || s.hardware.p01Sensor === null ? 'Sin lectura' : s.hardware.p01Sensor ? 'Vehículo en P01' : 'P01 libre' }}</dd></div>
         <div><dt>Distancia (HC-SR04)</dt><dd>{{ distancia() }}</dd></div>
         <div><dt>Barrera</dt><dd>{{ barrera() }}@if (s.hardware.telemetria?.angulo !== null && s.hardware.telemetria?.angulo !== undefined) { · {{ s.hardware.telemetria!.angulo }}° }</dd></div>
         @if (s.hardware.telemetria; as t) {

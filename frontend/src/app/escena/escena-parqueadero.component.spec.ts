@@ -48,6 +48,18 @@ describe('EscenaParqueaderoComponent', () => {
     await poner(estadoBase({ esp32Online: false }));
     expect(el.querySelector('.presencia')!.textContent).toContain('sin conexión');
   });
+  it('muestra la lectura del infrarrojo de P01 y la alerta cuando no confirma la entrada', async () => {
+    const { el, poner } = montar();
+    await poner(estadoBase({ p01Sensor: false }, { espacios: PUESTOS() }));
+    expect(el.textContent).toContain('P01 libre');
+    expect(el.querySelector('.alerta')).toBeNull();
+    await poner(estadoBase({ p01Sensor: true }, { espacios: PUESTOS() }));
+    expect(el.textContent).toContain('Vehículo en P01');
+    await poner(estadoBase({ p01Sensor: false, p01Alerta: 'ENTRADA_NO_CONFIRMADA' }, { espacios: PUESTOS() }));
+    expect(el.querySelector('.alerta')?.textContent).toContain('no vio llegar el vehículo');
+    await poner(estadoBase({ esp32Online: false }, { espacios: PUESTOS() }));
+    expect(el.textContent).toContain('Sin lectura');
+  });
   it('en una entrada el vehículo espera en la puerta y al cruzar va a P01', async () => {
     const { el, poner } = montar();
     await poner(estadoBase({}, { autorizacionActiva: aut('ESPERANDO_VEHICULO') } as any));

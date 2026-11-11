@@ -7,6 +7,7 @@ export interface AutorizacionCreada { autorizacionId: number; url: string; expir
 export interface ConfirmacionAcceso { autorizacionId: number; direccion: Direccion; aprendiz: { nombre: string }; vehiculo: { placa: string }; }
 export interface EstadoHardware {
   esp32Online: boolean; vehiculoEnEntrada: boolean; distanciaCm: number | null; p01Ocupado: boolean | null;
+  p01Sensor: boolean | null; p01Alerta: 'ENTRADA_NO_CONFIRMADA' | 'SALIDA_NO_CONFIRMADA' | null;
   barrera: 'abierta' | 'cerrada' | 'desconocida';
   telemetria: Telemetria | null; actualizado: string;
 }
@@ -17,7 +18,7 @@ export interface EstadoGeneral {
   hardware: EstadoHardware; autorizacionActiva: AutorizacionActiva | null; espacios: Espacio[];
   modoSimulado: boolean; pruebas: boolean; urlPublica: string;
 }
-export type SensorSimulado = 'online' | 'entrada' | 'cruce';
+export type SensorSimulado = 'online' | 'entrada' | 'cruce' | 'p01';
 export type EstadoAutorizacion =
   | 'CREADA' | 'ESPERANDO_VEHICULO' | 'AUTORIZADA' | 'BARRERA_ABIERTA' | 'CRUZANDO'
   | 'FINALIZADA' | 'DENEGADA' | 'EXPIRADA' | 'TIEMPO_AGOTADO' | 'ERROR_MQTT' | 'ERROR_SENSOR';

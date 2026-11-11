@@ -38,7 +38,9 @@ import { VehiculoComponent } from './vehiculo.component';
           <i><b [style.width.%]="aprox() * 100"></b></i></div>
         <div><span class="etq">Vehículo en la barrera</span><strong class="presencia" [class.si]="presente()">{{ presenciaTexto() }}</strong></div>
         <div><span class="etq">Barrera</span><span class="valor">{{ barreraAbierta() ? 'Abierta' : 'Cerrada' }}</span></div>
+        <div><span class="etq">Infrarrojo P01</span><strong class="presencia" [class.si]="p01Visto()">{{ p01Texto() }}</strong></div>
       </div>
+      @if (alertaP01(); as alerta) { <p class="alerta" role="alert">{{ alerta }}</p> }
       <figcaption>
         <span class="estado" role="status" aria-live="polite">{{ mensaje() }}</span>
         <span class="nota">{{ resumen() }}</span>
@@ -72,7 +74,7 @@ import { VehiculoComponent } from './vehiculo.component';
     .lugar-dentro app-vehiculo { transform: rotate(-90deg); transition: transform .5s ease 1.2s; }
     .lugar-puerta app-vehiculo, .lugar-afuera app-vehiculo { transform: none; transition: transform .4s; }
     .aprox { top: 74%; opacity: .75; transition: left .5s linear; }
-    .medidor { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 12px; border: 1px solid var(--linea); border-radius: 12px; background: var(--linea); overflow: hidden; }
+    .medidor { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 12px; border: 1px solid var(--linea); border-radius: 12px; background: var(--linea); overflow: hidden; }
     .medidor > div { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; background: var(--superficie); min-width: 0; }
     .medidor .etq { font-size: 12px; color: var(--suave); }
     .medidor .valor, .medidor .presencia { font: 600 17px var(--titulo); }
@@ -80,7 +82,9 @@ import { VehiculoComponent } from './vehiculo.component';
     .medidor .presencia.si { color: var(--marca-oscura); }
     .medidor i { height: 4px; border-radius: 2px; background: var(--linea); overflow: hidden; }
     .medidor b { display: block; height: 100%; background: var(--marca); transition: width .4s; }
-    @media (max-width: 560px) { .medidor { grid-template-columns: 1fr; } }
+    .alerta { margin: 8px 0 0; padding: 8px 12px; border-radius: 10px; background: #fdf0e0; border: 1px solid #e3b877; color: #7a4a05; font-size: 14px; }
+    @media (max-width: 720px) { .medidor { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 420px) { .medidor { grid-template-columns: 1fr; } }
     figcaption { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; }
     .estado { font-size: 17px; font-weight: 600; } .nota { font-size: 13px; color: var(--suave); }
   `,
@@ -109,6 +113,18 @@ export class EscenaParqueaderoComponent {
   protected distanciaTexto = computed(() => {
     const d = this.estado()?.hardware.distanciaCm;
     return d === null || d === undefined ? 'sin dato' : `${Math.round(d)} cm`;
+  });
+  protected p01Visto = computed(() => this.estado()?.hardware.esp32Online === true && this.estado()?.hardware.p01Sensor === true);
+  protected p01Texto = computed(() => {
+    const h = this.estado()?.hardware;
+    if (!h?.esp32Online || h.p01Sensor === null || h.p01Sensor === undefined) return 'Sin lectura';
+    return h.p01Sensor ? 'Vehículo en P01' : 'P01 libre';
+  });
+  protected alertaP01 = computed(() => {
+    const a = this.estado()?.hardware.p01Alerta;
+    if (a === 'ENTRADA_NO_CONFIRMADA') return 'Entrada registrada, pero el sensor de P01 no vio llegar el vehículo: puede haberse ido a otro lado.';
+    if (a === 'SALIDA_NO_CONFIRMADA') return 'Salida registrada, pero el sensor de P01 sigue viendo un vehículo.';
+    return null;
   });
   protected barreraAbierta = computed(() => this.estado()?.hardware.barrera === 'abierta');
   protected moto = computed(() => esMoto(this.estado()?.autorizacionActiva?.tipo ?? ''));

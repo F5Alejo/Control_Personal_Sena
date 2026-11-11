@@ -45,5 +45,6 @@ export class SimuladorComponent {
     { t: 'ESP32 en línea', s: 'online', v: true }, { t: 'ESP32 sin conexión', s: 'online', v: false },
     { t: 'Carrito en la entrada', s: 'entrada', v: true }, { t: 'Retirar carrito', s: 'entrada', v: false },
     { t: 'Carrito cruza la barrera', s: 'cruce' },
+    { t: 'Carrito llega a P01', s: 'p01', v: true }, { t: 'Carrito sale de P01', s: 'p01', v: false },
   ];
 }
