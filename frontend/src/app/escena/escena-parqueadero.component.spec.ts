@@ -48,31 +48,32 @@ describe('EscenaParqueaderoComponent', () => {
     await poner(estadoBase({ esp32Online: false }));
     expect(el.querySelector('.presencia')!.textContent).toContain('sin conexión');
   });
-  it('muestra la lectura del infrarrojo de P01 y la alerta cuando no confirma la entrada', async () => {
+  it('muestra el movimiento que ve el sensor de P01 y la alerta cuando no confirma la entrada', async () => {
     const { el, poner } = montar();
     await poner(estadoBase({ p01Sensor: false }, { espacios: PUESTOS() }));
-    expect(el.textContent).toContain('P01 libre');
+    expect(el.textContent).toContain('Sin movimiento');
     expect(el.querySelector('.alerta')).toBeNull();
     await poner(estadoBase({ p01Sensor: true }, { espacios: PUESTOS() }));
-    expect(el.textContent).toContain('Vehículo en P01');
+    expect(el.textContent).toContain('Movimiento en P01');
     await poner(estadoBase({ p01Sensor: false, p01Alerta: 'ENTRADA_NO_CONFIRMADA' }, { espacios: PUESTOS() }));
-    expect(el.querySelector('.alerta')?.textContent).toContain('no vio llegar el vehículo');
+    expect(el.querySelector('.alerta')?.textContent).toContain('no vio movimiento');
     await poner(estadoBase({ esp32Online: false }, { espacios: PUESTOS() }));
     expect(el.textContent).toContain('Sin lectura');
   });
-  it('con el aprendiz dentro, el infrarrojo marca verde si el vehículo está en P01 y rojo si no está', async () => {
+  it('con el aprendiz dentro, la tarjeta de P01 es verde si el sensor confirmó la llegada, roja si no y neutra mientras verifica', async () => {
     const { el, poner } = montar();
     const espacios = PUESTOS(); espacios[0] = { codigo: 'P01', ocupado: true, placa: 'ABC123', tipo: 'CARRO', aprendiz: 'Ana Gómez' };
-    await poner(estadoBase({ p01Sensor: true }, { espacios }));
     const celda = () => el.querySelector('.p01-vigilancia') as HTMLElement;
+    await poner(estadoBase({ p01Sensor: false, p01Confirmado: true }, { espacios }));
     expect(celda().classList).toContain('ok');
     expect(celda().textContent).toContain('ABC123');
-    await poner(estadoBase({ p01Sensor: false }, { espacios }));
+    await poner(estadoBase({ p01Sensor: false, p01Confirmado: false, p01Alerta: 'ENTRADA_NO_CONFIRMADA' }, { espacios }));
     expect(celda().classList).toContain('falta');
     expect(celda().textContent).toContain('Ana Gómez');
-    await poner(estadoBase({ p01Sensor: null }, { espacios }));
+    await poner(estadoBase({ p01Sensor: false, p01Confirmado: false }, { espacios }));
     expect(celda().classList).not.toContain('ok');
     expect(celda().classList).not.toContain('falta');
+    expect(celda().textContent).toContain('Verificando');
     await poner(estadoBase({ p01Sensor: false }, { espacios: PUESTOS() }));
     expect(celda().classList).not.toContain('falta');
   });

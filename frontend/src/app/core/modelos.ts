@@ -7,7 +7,7 @@ export interface AutorizacionCreada { autorizacionId: number; url: string; expir
 export interface ConfirmacionAcceso { autorizacionId: number; direccion: Direccion; aprendiz: { nombre: string }; vehiculo: { placa: string }; }
 export interface EstadoHardware {
   esp32Online: boolean; vehiculoEnEntrada: boolean; distanciaCm: number | null; p01Ocupado: boolean | null;
-  p01Sensor: boolean | null; p01Alerta: 'ENTRADA_NO_CONFIRMADA' | 'SALIDA_NO_CONFIRMADA' | null;
+  p01Sensor: boolean | null; p01Confirmado: boolean | null; p01Alerta: 'ENTRADA_NO_CONFIRMADA' | 'SALIDA_NO_CONFIRMADA' | null;
   barrera: 'abierta' | 'cerrada' | 'desconocida';
   telemetria: Telemetria | null; actualizado: string;
 }

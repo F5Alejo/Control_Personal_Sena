@@ -11,8 +11,8 @@ export const ETIQUETAS_EVENTO: Record<string, string> = {
   VEHICULO_NO_CRUZO: 'El vehículo no cruzó', SALIDA_REGISTRADA: 'Salida registrada', ESP32_ONLINE: 'ESP32 en línea',
   ESP32_OFFLINE: 'ESP32 sin conexión', APERTURA_MANUAL: 'Apertura manual', SOLICITUD_MANUAL: 'Solicitud manual',
   MENSAJE_MQTT_INVALIDO: 'Mensaje MQTT inválido', DEMO_REINICIADA: 'Demo reiniciada', RECUPERACION_ARRANQUE: 'Recuperación al arrancar',
-  ENTRADA_CONFIRMADA: 'Entrada confirmada por el sensor de P01', ENTRADA_NO_CONFIRMADA: 'Entrada sin confirmar por el sensor de P01',
-  SALIDA_NO_CONFIRMADA: 'Salida sin confirmar: P01 sigue ocupado',
+  ENTRADA_CONFIRMADA: 'Llegada a P01 confirmada por el sensor de movimiento', ENTRADA_NO_CONFIRMADA: 'Entrada sin movimiento en P01',
+  SALIDA_NO_CONFIRMADA: 'Salida sin movimiento en P01',
 };
 export const INCONSISTENCIAS = new Set([
   'VEHICULO_NO_CRUZO', 'AUTORIZADO_SIN_VEHICULO', 'ENTRADA_NO_CONFIRMADA', 'SALIDA_NO_CONFIRMADA',

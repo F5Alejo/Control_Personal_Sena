@@ -39,7 +39,7 @@ import { VehiculoComponent } from './vehiculo.component';
         <div><span class="etq">Vehículo en la barrera</span><strong class="presencia" [class.si]="presente()">{{ presenciaTexto() }}</strong></div>
         <div><span class="etq">Barrera</span><span class="valor">{{ barreraAbierta() ? 'Abierta' : 'Cerrada' }}</span></div>
         <div class="p01-vigilancia" [class.ok]="p01Vigilancia().estado === 'ok'" [class.falta]="p01Vigilancia().estado === 'falta'">
-          <span class="etq">Infrarrojo P01</span><strong class="presencia">{{ p01Vigilancia().texto }}</strong></div>
+          <span class="etq">Sensor de movimiento P01</span><strong class="presencia">{{ p01Vigilancia().texto }}</strong></div>
       </div>
       @if (alertaP01(); as alerta) { <p class="alerta" role="alert">{{ alerta }}</p> }
       <figcaption>
@@ -119,7 +119,7 @@ export class EscenaParqueaderoComponent {
     const d = this.estado()?.hardware.distanciaCm;
     return d === null || d === undefined ? 'sin dato' : `${Math.round(d)} cm`;
   });
-  /** Mientras el aprendiz está dentro, el infrarrojo confirma (verde) o desmiente (rojo) que su vehículo sigue en P01. */
+  /** Mientras el aprendiz está dentro: verde si el sensor de movimiento confirmó su llegada a P01, rojo si no la vio. */
   protected p01Vigilancia = computed((): { estado: 'ok' | 'falta' | 'libre' | 'sin'; texto: string } => {
     const e = this.estado();
     const h = e?.hardware;
@@ -127,16 +127,16 @@ export class EscenaParqueaderoComponent {
     const p01 = e?.espacios.find((x) => x.codigo === 'P01');
     if (p01?.ocupado) {
       const quien = [p01.placa, p01.aprendiz].filter(Boolean).join(' · ');
-      return h.p01Sensor
-        ? { estado: 'ok', texto: `En P01${quien ? ' · ' + quien : ''}` }
-        : { estado: 'falta', texto: `Ausente de P01${p01.aprendiz ? ' · ' + p01.aprendiz + ' sigue dentro' : ''}` };
+      if (h.p01Alerta) return { estado: 'falta', texto: `Sin movimiento en P01${p01.aprendiz ? ' · ' + p01.aprendiz + ' sigue dentro' : ''}` };
+      if (h.p01Confirmado) return { estado: 'ok', texto: `Llegó a P01${quien ? ' · ' + quien : ''}` };
+      return { estado: 'libre', texto: 'Verificando llegada…' };
     }
-    return { estado: 'libre', texto: h.p01Sensor ? 'Vehículo en P01' : 'P01 libre' };
+    return { estado: 'libre', texto: h.p01Sensor ? 'Movimiento en P01' : 'Sin movimiento' };
   });
   protected alertaP01 = computed(() => {
     const a = this.estado()?.hardware.p01Alerta;
-    if (a === 'ENTRADA_NO_CONFIRMADA') return 'Entrada registrada, pero el sensor de P01 no vio llegar el vehículo: puede haberse ido a otro lado.';
-    if (a === 'SALIDA_NO_CONFIRMADA') return 'Salida registrada, pero el sensor de P01 sigue viendo un vehículo.';
+    if (a === 'ENTRADA_NO_CONFIRMADA') return 'Entrada registrada, pero el sensor de P01 no vio movimiento: el vehículo puede haberse ido a otro lado.';
+    if (a === 'SALIDA_NO_CONFIRMADA') return 'Salida registrada, pero el sensor de P01 no vio movimiento al salir el vehículo.';
     return null;
   });
   protected barreraAbierta = computed(() => this.estado()?.hardware.barrera === 'abierta');

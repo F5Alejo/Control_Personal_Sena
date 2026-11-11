@@ -44,9 +44,9 @@ describe('SimuladorComponent', () => {
     expect(api.acercar).toHaveBeenCalledWith(35);
   });
 
-  it('ofrece los botones del infrarrojo de P01', async () => {
+  it('ofrece los botones del sensor de movimiento de P01', async () => {
     const { f } = montar(true);
     await f.whenStable();
-    expect((f.nativeElement as HTMLElement).textContent).toContain('Carrito llega a P01');
+    expect((f.nativeElement as HTMLElement).textContent).toContain('Movimiento en P01');
   });
 });
