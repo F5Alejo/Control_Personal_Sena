@@ -7,7 +7,7 @@ import { TiempoRealFalso, estadoBase } from '../../core/pruebas';
 function montar(modoSimulado: boolean) {
   const rt = new TiempoRealFalso();
   rt.estado$.next(estadoBase({}, { modoSimulado }));
-  const api = { simular: vi.fn().mockResolvedValue(undefined) };
+  const api = { simular: vi.fn().mockResolvedValue(undefined), acercar: vi.fn().mockResolvedValue(undefined) };
   TestBed.configureTestingModule({ imports: [SimuladorComponent], providers: [
     { provide: ApiService, useValue: api }, { provide: TiempoRealService, useValue: rt }] });
   return { api, f: TestBed.createComponent(SimuladorComponent) };
@@ -27,10 +27,18 @@ describe('SimuladorComponent', () => {
     expect(api.simular).toHaveBeenCalledWith('cruce', undefined);
   });
 
-  it('"P01 ocupado" llama a simular(\'p01\', true)', async () => {
+  it('el control de distancia llama a acercar con los centímetros elegidos', async () => {
     const { f, api } = montar(true);
     await f.whenStable();
-    (Array.from((f.nativeElement as HTMLElement).querySelectorAll('button')).find(b => b.textContent?.includes('P01 ocupado'))!).click();
-    expect(api.simular).toHaveBeenCalledWith('p01', true);
+    const r = (f.nativeElement as HTMLElement).querySelector('input[type=range]') as HTMLInputElement;
+    r.value = '35';
+    r.dispatchEvent(new Event('change'));
+    expect(api.acercar).toHaveBeenCalledWith(35);
+  });
+
+  it('ya no ofrece botones de P01', async () => {
+    const { f } = montar(true);
+    await f.whenStable();
+    expect((f.nativeElement as HTMLElement).textContent).not.toContain('P01');
   });
 });

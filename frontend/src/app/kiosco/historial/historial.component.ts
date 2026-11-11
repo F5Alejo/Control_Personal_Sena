@@ -7,14 +7,13 @@ import { AccesoFila, EventoFila } from '../../core/modelos';
 
 export const ETIQUETAS_EVENTO: Record<string, string> = {
   ACCESO_DENEGADO: 'Acceso denegado', AUTORIZACION_CREADA: 'Autorización creada', AUTORIZACION_CONFIRMADA: 'Autorización confirmada',
-  AUTORIZADO_SIN_VEHICULO: 'Autorizado sin vehículo', ENTRADA_REGISTRADA: 'Entrada registrada', ENTRADA_SIN_OCUPACION: 'Entrada sin ocupación de P01',
-  VEHICULO_NO_CRUZO: 'El vehículo no cruzó', SALIDA_REGISTRADA: 'Salida registrada', SALIDA_SIN_LIBERAR: 'Salida sin liberar P01',
-  P01_OCUPADO_SIN_ACCESO: 'P01 ocupado sin acceso', P01_LIBERADO_SIN_SALIDA: 'P01 liberado sin salida', ESP32_ONLINE: 'ESP32 en línea',
+  AUTORIZADO_SIN_VEHICULO: 'Autorizado sin vehículo', ENTRADA_REGISTRADA: 'Entrada registrada',
+  VEHICULO_NO_CRUZO: 'El vehículo no cruzó', SALIDA_REGISTRADA: 'Salida registrada', ESP32_ONLINE: 'ESP32 en línea',
   ESP32_OFFLINE: 'ESP32 sin conexión', APERTURA_MANUAL: 'Apertura manual', SOLICITUD_MANUAL: 'Solicitud manual',
   MENSAJE_MQTT_INVALIDO: 'Mensaje MQTT inválido', DEMO_REINICIADA: 'Demo reiniciada', RECUPERACION_ARRANQUE: 'Recuperación al arrancar',
 };
 export const INCONSISTENCIAS = new Set([
-  'P01_OCUPADO_SIN_ACCESO', 'ENTRADA_SIN_OCUPACION', 'SALIDA_SIN_LIBERAR', 'P01_LIBERADO_SIN_SALIDA', 'VEHICULO_NO_CRUZO', 'AUTORIZADO_SIN_VEHICULO',
+  'VEHICULO_NO_CRUZO', 'AUTORIZADO_SIN_VEHICULO',
 ]);
 
 export function formatearPermanencia(seg: number | null): string {

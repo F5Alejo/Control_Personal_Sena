@@ -46,3 +46,39 @@ describe('EscenaParqueaderoComponent', () => {
     expect(el.querySelector('.barrera')!.classList.contains('abierta')).toBe(true);
   });
 });
+
+describe('EscenaParqueaderoComponent con el HC-SR04', () => {
+  it('muestra la distancia que mide el sensor junto a la barrera', async () => {
+    const { el, poner } = montar();
+    await poner(estadoBase({ distanciaCm: 42.4 }));
+    expect(el.querySelector('.medidor')!.textContent).toContain('42 cm');
+  });
+  it('sin dato del sensor el medidor lo indica', async () => {
+    const { el, poner } = montar();
+    await poner(estadoBase({ distanciaCm: null }));
+    expect(el.querySelector('.medidor')!.textContent).toContain('sin dato');
+  });
+  it('un vehículo que se acerca se dibuja afuera y más cerca cuanto menor es la distancia', async () => {
+    const { el, poner } = montar();
+    await poner(estadoBase({ distanciaCm: 90 }));
+    const lejos = parseFloat((el.querySelector('.aprox') as HTMLElement).style.left);
+    await poner(estadoBase({ distanciaCm: 15 }));
+    const cerca = parseFloat((el.querySelector('.aprox') as HTMLElement).style.left);
+    expect(cerca).toBeGreaterThan(lejos);
+  });
+  it('si no hay nada cerca no dibuja el vehículo que se acerca', async () => {
+    const { el, poner } = montar();
+    await poner(estadoBase({ distanciaCm: 300 }));
+    expect(el.querySelector('.aprox')).toBeNull();
+  });
+  it('con un flujo en la puerta no duplica el vehículo', async () => {
+    const { el, poner } = montar();
+    await poner(estadoBase({ distanciaCm: 12 }, { autorizacionActiva: aut('ESPERANDO_VEHICULO') } as any));
+    expect(el.querySelector('.aprox')).toBeNull();
+  });
+  it('sin ESP32 no se muestra el vehículo que se acerca', async () => {
+    const { el, poner } = montar();
+    await poner(estadoBase({ esp32Online: false, distanciaCm: 12 }));
+    expect(el.querySelector('.aprox')).toBeNull();
+  });
+});

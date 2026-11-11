@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TiempoRealService } from '../core/tiempo-real.service';
-import { esMoto, posicionVehiculo } from '../core/escena';
+import { aproximacion, esMoto, posicionVehiculo } from '../core/escena';
 import { TEXTO_ESTADO } from '../core/textos-estado';
 import { VehiculoComponent } from './vehiculo.component';
 
@@ -13,7 +13,7 @@ import { VehiculoComponent } from './vehiculo.component';
       <div class="escena" role="img" [attr.aria-label]="descripcion()">
         <div class="puestos">
           @for (p of puestos; track p.n) {
-            <div class="puesto" [class.real]="p.real" [class.ocupado]="p.real && p01Ocupado()" [class.bloqueo]="p.real && bloqueo()">
+            <div class="puesto" [class.real]="p.real" [class.ocupado]="p.real && p01Ocupado()">
               <span class="num">{{ p.n }}</span>
               @if (!p.real && p.deco) { <app-vehiculo class="deco" [moto]="p.deco === 'moto'" style="--color:#b9c2bb" /> }
             </div>
@@ -24,6 +24,14 @@ import { VehiculoComponent } from './vehiculo.component';
         <div class="veh" [class]="'veh lugar-' + pos().lugar" [class.oculto]="!pos().visible">
           <app-vehiculo [moto]="moto()" />
           @if (placa()) { <span class="placa">{{ placa() }}</span> }
+        </div>
+        @if (hayAprox()) {
+          <div class="veh aprox" [style.left.%]="aproxIzq()"><app-vehiculo [moto]="false" style="--color:#8aa092" /></div>
+        }
+        <div class="medidor" [class.activo]="hayAprox()" role="status">
+          <span class="etq">HC-SR04</span>
+          <span class="valor">{{ distanciaTexto() }}</span>
+          <i><b [style.width.%]="aprox() * 100"></b></i>
         </div>
         <span class="rotulo entrada">Entrada</span>
       </div>
@@ -42,7 +50,6 @@ import { VehiculoComponent } from './vehiculo.component';
     .puesto.real { border: 2px solid var(--marca); background: var(--marca-tenue); }
     .puesto.real .num { color: var(--marca-oscura); }
     .puesto.real.ocupado { background: #d9e4d6; }
-    .puesto.bloqueo { border-color: var(--alerta); background: var(--alerta-tenue); }
     .deco { width: 62%; transform: rotate(-90deg); margin-top: 10%; opacity: .85; }
     .via { position: absolute; left: 0; right: 0; top: 56%; height: 36%; background: #2b352d; }
     .via i { position: absolute; left: 0; right: 0; top: 50%; border-top: 3px dashed rgba(255,255,255,.35); }
@@ -59,6 +66,13 @@ import { VehiculoComponent } from './vehiculo.component';
     .lugar-p01 { left: 34%; top: 36%; transition: left 1.4s ease-in-out, top .9s ease 1.4s; }
     .lugar-p01 app-vehiculo { transform: rotate(-90deg); transition: transform .5s ease 1.2s; }
     .lugar-puerta app-vehiculo, .lugar-afuera app-vehiculo { transform: none; transition: transform .4s; }
+    .aprox { top: 74%; opacity: .75; transition: left .5s linear; }
+    .medidor { position: absolute; left: 26%; bottom: 8px; display: grid; grid-template-columns: auto auto; gap: 2px 8px; align-items: center; padding: 5px 9px;
+      border-radius: 8px; background: rgba(0,0,0,.45); color: rgba(255,255,255,.75); font-size: 12px; }
+    .medidor.activo { background: var(--marca-oscura); color: #fff; }
+    .medidor .valor { font: 700 13px var(--titulo); text-align: right; }
+    .medidor i { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); overflow: hidden; }
+    .medidor b { display: block; height: 100%; background: #8fd467; transition: width .4s; }
     figcaption { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
     .estado { font-size: 17px; font-weight: 600; } .nota { font-size: 13px; color: var(--suave); }
   `,
@@ -73,7 +87,14 @@ export class EscenaParqueaderoComponent {
   ];
   protected pos = computed(() => posicionVehiculo(this.estado()?.autorizacionActiva ?? null, this.estado()?.hardware.p01Ocupado ?? null));
   protected p01Ocupado = computed(() => this.estado()?.hardware.p01Ocupado === true);
-  protected bloqueo = computed(() => this.estado()?.bloqueoP01 === true);
+  protected aprox = computed(() => aproximacion(this.estado()?.hardware.distanciaCm ?? null));
+  /** El vehículo que se acerca solo se dibuja si el ESP32 está en línea y el flujo no lo está mostrando ya en la puerta. */
+  protected hayAprox = computed(() => this.estado()?.hardware.esp32Online === true && this.aprox() > 0 && this.pos().lugar !== 'puerta');
+  protected aproxIzq = computed(() => -12 + this.aprox() * 23);
+  protected distanciaTexto = computed(() => {
+    const d = this.estado()?.hardware.distanciaCm;
+    return d === null || d === undefined ? 'sin dato' : `${Math.round(d)} cm`;
+  });
   protected barreraAbierta = computed(() => this.estado()?.hardware.barrera === 'abierta');
   protected moto = computed(() => esMoto(this.ultimo()?.tipo ?? ''));
   protected placa = computed(() => this.ultimo()?.placa ?? '');
@@ -82,7 +103,7 @@ export class EscenaParqueaderoComponent {
     if (!e) return 'Conectando…';
     const a = e.autorizacionActiva;
     if (a) return `${a.direccion === 'ENTRADA' ? 'Entrada' : 'Salida'} de ${a.aprendiz}: ${TEXTO_ESTADO[a.estado]}`;
-    if (e.bloqueoP01) return 'P01 bloqueado: figura ocupado sin un acceso registrado';
+    if (e.hardware.vehiculoEnEntrada) return 'Vehículo frente a la barrera: ya puede escanear el QR';
     return e.hardware.p01Ocupado === null ? 'P01 sin dato del sensor' : e.hardware.p01Ocupado ? 'P01 ocupado' : 'P01 libre, listo para una entrada';
   });
   protected descripcion = computed(() => `Parqueadero con seis puestos. ${this.mensaje()}`);

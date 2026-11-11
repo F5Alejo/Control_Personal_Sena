@@ -38,5 +38,6 @@ export class ApiService {
   simular(sensor: SensorSimulado, valor?: boolean) {
     return firstValueFrom(this.http.post<void>('/api/simulador/sensor', { sensor, valor }));
   }
+  acercar(distanciaCm: number) { return firstValueFrom(this.http.post<void>('/api/simulador/distancia', { distancia_cm: distanciaCm })); }
   private limite(l?: number) { return l === undefined ? new HttpParams() : new HttpParams().set('limite', l); }
 }

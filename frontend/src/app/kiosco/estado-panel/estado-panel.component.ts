@@ -1,13 +1,14 @@
 import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TiempoRealService } from '../../core/tiempo-real.service';
+import { duracionTexto, senal } from '../../core/escena';
 
 @Component({
   selector: 'app-estado-panel',
   imports: [],
   template: `
     @if (e(); as s) {
-      <div class="bahia" [class.ocupada]="s.hardware.p01Ocupado === true && !s.bloqueoP01" [class.bloqueo]="s.bloqueoP01" role="status">
+      <div class="bahia" [class.ocupada]="s.hardware.p01Ocupado === true" role="status">
         <svg class="barrera" viewBox="0 0 120 60" aria-hidden="true" [class.abierta]="s.hardware.barrera === 'abierta'">
           <circle cx="14" cy="46" r="7" /><line class="brazo" x1="14" y1="46" x2="112" y2="46" />
         </svg>
@@ -17,8 +18,14 @@ import { TiempoRealService } from '../../core/tiempo-real.service';
       <dl>
         <div [class.mal]="!s.hardware.esp32Online"><dt>ESP32</dt><dd>{{ s.hardware.esp32Online ? 'En línea' : 'Sin conexión' }}</dd></div>
         <div><dt>Vehículo en la entrada</dt><dd>{{ s.hardware.vehiculoEnEntrada ? 'Presente' : 'Ninguno' }}</dd></div>
-        <div><dt>Barrera</dt><dd>{{ barrera() }}</dd></div>
-        @if (s.hardware.ambiente; as a) { <div><dt>Ambiente</dt><dd>{{ a.temp }} °C · {{ a.hum }} %</dd></div> }
+        <div><dt>Distancia (HC-SR04)</dt><dd>{{ distancia() }}</dd></div>
+        <div><dt>Barrera</dt><dd>{{ barrera() }}@if (s.hardware.telemetria?.angulo !== null && s.hardware.telemetria?.angulo !== undefined) { · {{ s.hardware.telemetria!.angulo }}° }</dd></div>
+        @if (s.hardware.telemetria; as t) {
+          <div><dt>WiFi</dt><dd>{{ senalTexto(t.rssi) }} · {{ t.rssi }} dBm</dd></div>
+          @if (t.ip) { <div><dt>Dirección IP</dt><dd>{{ t.ip }}</dd></div> }
+          <div><dt>Encendido hace</dt><dd>{{ duracion(t.uptimeS) }}</dd></div>
+          @if (t.heapLibre !== null) { <div><dt>Memoria libre</dt><dd>{{ memoria(t.heapLibre) }}</dd></div> }
+        }
       </dl>
     } @else { <p class="espera">Conectando…</p> }
   `,
@@ -33,9 +40,6 @@ import { TiempoRealService } from '../../core/tiempo-real.service';
     .bahia.ocupada { background: var(--tinta); border-color: var(--tinta); color: #fff; }
     .bahia.ocupada::before { background: repeating-linear-gradient(90deg, var(--tinta) 0 18px, transparent 18px 30px); }
     .bahia.ocupada .estado { color: #cfe0d3; }
-    .bahia.bloqueo { border-color: var(--alerta); background: var(--alerta-tenue); }
-    .bahia.bloqueo::before { background: repeating-linear-gradient(90deg, var(--alerta) 0 18px, transparent 18px 30px); }
-    .bahia.bloqueo .estado { color: var(--alerta); }
     .barrera { position: absolute; top: 18px; right: 22px; width: 96px; opacity: .9; }
     .barrera circle { fill: currentColor; }
     .barrera .brazo { stroke: var(--marca); stroke-width: 7; stroke-linecap: round; transform-origin: 14px 46px; transition: transform .6s cubic-bezier(.3,.7,.2,1); }
@@ -53,9 +57,15 @@ export class EstadoPanelComponent {
   private rt = inject(TiempoRealService);
   protected e = toSignal(this.rt.estado$, { initialValue: null });
   protected barrera = computed(() => ({ abierta: 'Abierta', cerrada: 'Cerrada', desconocida: 'Desconocida' }[this.e()!.hardware.barrera]));
+  protected distancia = computed(() => {
+    const d = this.e()!.hardware.distanciaCm;
+    return d === null ? 'Sin lectura' : `${Math.round(d)} cm`;
+  });
+  protected senalTexto = senal;
+  protected duracion = duracionTexto;
+  protected memoria = (b: number) => `${Math.round(b / 1024)} KB`;
   protected p01 = computed(() => {
     const s = this.e()!;
-    if (s.bloqueoP01) return 'Bloqueado por inconsistencia';
     return s.hardware.p01Ocupado === null ? 'Sin dato' : s.hardware.p01Ocupado ? 'Ocupado' : 'Libre';
   });
 }

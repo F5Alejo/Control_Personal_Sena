@@ -6,13 +6,14 @@ export interface NuevaAutorizacion { aprendizId: number; vehiculoId: number; dir
 export interface AutorizacionCreada { autorizacionId: number; url: string; expiraEn: string; }
 export interface ConfirmacionAcceso { autorizacionId: number; direccion: Direccion; aprendiz: { nombre: string }; vehiculo: { placa: string }; }
 export interface EstadoHardware {
-  esp32Online: boolean; vehiculoEnEntrada: boolean; p01Ocupado: boolean | null;
+  esp32Online: boolean; vehiculoEnEntrada: boolean; distanciaCm: number | null; p01Ocupado: boolean | null;
   barrera: 'abierta' | 'cerrada' | 'desconocida';
-  ambiente: { temp: number; hum: number; movimiento: boolean } | null; actualizado: string;
+  telemetria: Telemetria | null; actualizado: string;
 }
+export interface Telemetria { rssi: number; uptimeS: number; ip: string | null; heapLibre: number | null; angulo: number | null; }
 export interface AutorizacionActiva { id: number; estado: EstadoAutorizacion; direccion: Direccion; aprendiz: string; placa: string; tipo: string; }
-export interface EstadoGeneral { hardware: EstadoHardware; autorizacionActiva: AutorizacionActiva | null; bloqueoP01: boolean; modoSimulado: boolean; urlPublica: string; }
-export type SensorSimulado = 'online' | 'entrada' | 'cruce' | 'p01';
+export interface EstadoGeneral { hardware: EstadoHardware; autorizacionActiva: AutorizacionActiva | null; modoSimulado: boolean; urlPublica: string; }
+export type SensorSimulado = 'online' | 'entrada' | 'cruce';
 export type EstadoAutorizacion =
   | 'CREADA' | 'ESPERANDO_VEHICULO' | 'AUTORIZADA' | 'BARRERA_ABIERTA' | 'CRUZANDO'
   | 'FINALIZADA' | 'DENEGADA' | 'EXPIRADA' | 'TIEMPO_AGOTADO' | 'ERROR_MQTT' | 'ERROR_SENSOR';

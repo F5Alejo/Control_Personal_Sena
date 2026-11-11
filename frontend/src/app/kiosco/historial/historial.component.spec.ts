@@ -25,11 +25,11 @@ describe('HistorialComponent', () => {
 
   it('resalta los eventos de inconsistencia', async () => {
     const { f, rt, el } = await montar();
-    rt.emitir('evento:nuevo', ev(2, 'P01_OCUPADO_SIN_ACCESO'));
+    rt.emitir('evento:nuevo', ev(2, 'VEHICULO_NO_CRUZO'));
     rt.emitir('evento:nuevo', ev(3, 'ENTRADA_REGISTRADA'));
     await f.whenStable();
     const filas = Array.from(el.querySelectorAll('[data-evento]'));
-    expect(filas.find(r => r.textContent?.includes('P01 ocupado sin acceso'))?.classList.contains('inconsistencia')).toBe(true);
+    expect(filas.find(r => r.textContent?.includes('El vehículo no cruzó'))?.classList.contains('inconsistencia')).toBe(true);
     expect(filas.find(r => r.textContent?.includes('Entrada registrada'))?.classList.contains('inconsistencia')).toBe(false);
   });
 

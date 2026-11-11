@@ -1,4 +1,4 @@
-import { esMoto, posicionVehiculo } from './escena';
+import { aproximacion, duracionTexto, esMoto, posicionVehiculo, senal } from './escena';
 import { AutorizacionActiva } from './modelos';
 
 const aut = (estado: AutorizacionActiva['estado'], direccion: AutorizacionActiva['direccion'] = 'ENTRADA'): AutorizacionActiva =>
@@ -32,5 +32,35 @@ describe('esMoto', () => {
     expect(esMoto('MOTO')).toBe(true);
     expect(esMoto('moto')).toBe(true);
     expect(esMoto('CARRO')).toBe(false);
+  });
+});
+
+describe('aproximacion', () => {
+  it('sin dato o lejos (100 cm o más) vale 0', () => {
+    expect(aproximacion(null)).toBe(0);
+    expect(aproximacion(100)).toBe(0);
+    expect(aproximacion(250)).toBe(0);
+  });
+  it('crece a medida que baja la distancia y llega a 1 pegado a la barrera', () => {
+    expect(aproximacion(52.5)).toBeCloseTo(0.5, 1);
+    expect(aproximacion(12)).toBeGreaterThan(0.9);
+    expect(aproximacion(3)).toBe(1);
+  });
+});
+
+describe('senal', () => {
+  it('clasifica el RSSI del WiFi', () => {
+    expect(senal(-50)).toBe('Excelente');
+    expect(senal(-65)).toBe('Buena');
+    expect(senal(-75)).toBe('Regular');
+    expect(senal(-90)).toBe('Débil');
+  });
+});
+
+describe('duracionTexto', () => {
+  it('formatea el tiempo encendido', () => {
+    expect(duracionTexto(45)).toBe('45 s');
+    expect(duracionTexto(125)).toBe('2 min 5 s');
+    expect(duracionTexto(7500)).toBe('2 h 5 min');
   });
 });
