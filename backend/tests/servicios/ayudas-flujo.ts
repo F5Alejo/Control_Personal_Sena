@@ -43,6 +43,6 @@ export async function entrarCompleto(s: Montaje): Promise<void> {
   const cmd = s.pub.de('senapark/cmd/barrera')[antes].payload.cmd_id;
   await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: cmd });
   await s.hw({ tipo: 'cruce' });
-  await s.hw({ tipo: 'p01', ocupado: true });
+  await s.avanzar(3000);
   await s.hw({ tipo: 'entrada', presente: false });
 }

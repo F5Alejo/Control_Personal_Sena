@@ -36,12 +36,27 @@ describe('ESP32 simulado', () => {
     await esp.poner('entrada', true);
     await espera(() => estado.snapshot().vehiculoEnEntrada);
   });
-  it('poner p01 publica ocupado con distancia y cruce emite el evento de cruce', async () => {
+  it('poner entrada publica también la distancia del HC-SR04', async () => {
+    await esp.poner('entrada', true);
+    await espera(() => estado.snapshot().distanciaCm === 12);
+    await esp.poner('entrada', false);
+    await espera(() => estado.snapshot().distanciaCm === 85 && !estado.snapshot().vehiculoEnEntrada);
+  });
+  it('acercar publica una distancia y la presencia sale del umbral', async () => {
+    await esp.acercar(60);
+    await espera(() => estado.snapshot().distanciaCm === 60 && !estado.snapshot().vehiculoEnEntrada);
+    await esp.acercar(18);
+    await espera(() => estado.snapshot().distanciaCm === 18 && estado.snapshot().vehiculoEnEntrada);
+  });
+  it('cruce emite el evento de cruce', async () => {
     let cruces = 0; estado.on('cruce', () => cruces++);
-    await esp.poner('p01', true); await esp.poner('cruce');
-    await espera(() => estado.snapshot().p01Ocupado === true && cruces === 1);
-    await esp.poner('p01', false);
-    await espera(() => estado.snapshot().p01Ocupado === false);
+    await esp.poner('cruce');
+    await espera(() => cruces === 1);
+  });
+  it('publica telemetría al conectar', async () => {
+    await esp.conectar();
+    await espera(() => estado.snapshot().telemetria !== null);
+    expect(estado.snapshot().telemetria).toMatchObject({ rssi: -55 });
   });
   it('un comando abrir recibido produce barrera abierta con el mismo cmd_id', async () => {
     await backend.publicar('senapark/cmd/barrera', { cmd_id: 'c1', accion: 'abrir', expira_en_ms: 5000 });
@@ -64,7 +79,7 @@ describe('ESP32 simulado', () => {
 });
 
 describe('ruta del simulador', () => {
-  const fake = () => { const llamadas: unknown[][] = []; return { llamadas, sim: { poner: async (...a: unknown[]) => { llamadas.push(a); } } as unknown as Esp32Simulado }; };
+  const fake = () => { const llamadas: unknown[][] = []; return { llamadas, sim: { poner: async (...a: unknown[]) => { llamadas.push(a); }, acercar: async (cm: number) => { llamadas.push(['distancia', cm]); } } as unknown as Esp32Simulado }; };
   it('responde 404 si modoSimulado es false', async () => {
     const { sim } = fake();
     const r = await request(appPrueba(pool, { simulador: sim })).post('/api/simulador/sensor').send({ sensor: 'entrada', valor: true });
@@ -73,8 +88,12 @@ describe('ruta del simulador', () => {
   it('con modoSimulado responde 204, valida el sensor y llama al simulador', async () => {
     const { sim, llamadas } = fake();
     const app = appPrueba(pool, { simulador: sim, config: cargarConfig({ MODO_SIMULADO: 'true' } as NodeJS.ProcessEnv) });
-    expect((await request(app).post('/api/simulador/sensor').send({ sensor: 'p01', valor: true })).status).toBe(204);
-    expect(llamadas).toEqual([['p01', true]]);
+    expect((await request(app).post('/api/simulador/sensor').send({ sensor: 'cruce' })).status).toBe(204);
+    expect(llamadas).toEqual([['cruce', undefined]]);
+    expect((await request(app).post('/api/simulador/distancia').send({ distancia_cm: 35 })).status).toBe(204);
+    expect(llamadas.at(-1)).toEqual(['distancia', 35]);
+    expect((await request(app).post('/api/simulador/distancia').send({ distancia_cm: -4 })).status).toBe(400);
+    expect((await request(app).post('/api/simulador/sensor').send({ sensor: 'p01', valor: true })).status).toBe(400);
     expect((await request(app).post('/api/simulador/sensor').send({ sensor: 'laser' })).status).toBe(400);
   });
 });

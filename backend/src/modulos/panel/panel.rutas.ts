@@ -11,7 +11,6 @@ export async function estadoGeneral(d: Pick<Dependencias, 'estado' | 'flujo' | '
   return {
     hardware: d.estado.snapshot(),
     autorizacionActiva: d.flujo.autorizacionActiva(),
-    bloqueoP01: await d.flujo.bloqueoP01(),
     modoSimulado: d.config.modoSimulado,
     urlPublica: d.config.publicUrl ?? (ip ? `http://${ip}:${d.config.puerto}` : null),
   };

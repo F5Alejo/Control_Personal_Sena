@@ -10,24 +10,17 @@ beforeAll(() => prepararBd(pool));
 afterAll(() => pool.end());
 beforeEach(async () => { await limpiarTablas(pool); s = await montarFlujo(pool); });
 
-describe('inconsistencias sin flujo activo', () => {
-  it('P01 ocupado sin acceso registra P01_OCUPADO_SIN_ACCESO una sola vez', async () => {
-    await s.hw({ tipo: 'p01', ocupado: true });
-    await s.hw({ tipo: 'p01', ocupado: true });
-    expect(await s.eventos('P01_OCUPADO_SIN_ACCESO')).toHaveLength(1);
-    expect(await s.flujo.bloqueoP01()).toBe(true);
-    const r = await crearAutorizacion({ pool, reloj: s.reloj, estado: s.estado, vigenciaQrSeg: 60 }, { aprendizId: s.a.id, vehiculoId: s.v.id, direccion: 'ENTRADA' });
-    expect(r).toEqual({ ok: false, motivo: 'P01_BLOQUEADO_INCONSISTENCIA' });
+describe('casos sueltos del flujo', () => {
+  it('un cruce sin autorización activa se ignora', async () => {
+    await s.hw({ tipo: 'cruce' });
+    expect(s.flujo.autorizacionActiva()).toBeNull();
+    expect((await pool.query('SELECT count(*)::int n FROM accesos')).rows[0].n).toBe(0);
   });
-  it('P01 libre con acceso DENTRO registra P01_LIBERADO_SIN_SALIDA', async () => {
+  it('P01 refleja la base de datos: ocupado tras entrar, libre al reiniciar la demo', async () => {
     await entrarCompleto(s);
-    await s.hw({ tipo: 'p01', ocupado: false });
-    expect(await s.eventos('P01_LIBERADO_SIN_SALIDA')).toHaveLength(1);
-  });
-  it('el flujo normal de entrada no genera eventos de inconsistencia', async () => {
-    await entrarCompleto(s);
-    expect(await s.eventos('P01_OCUPADO_SIN_ACCESO')).toHaveLength(0);
-    expect(await s.flujo.bloqueoP01()).toBe(false);
+    expect(s.estado.snapshot().p01Ocupado).toBe(true);
+    await s.flujo.reiniciarDemo();
+    expect(s.estado.snapshot().p01Ocupado).toBe(false);
   });
   it('apertura manual publica abrir, registra el evento y cierra después', async () => {
     await s.flujo.aperturaManual('Prueba del celador');

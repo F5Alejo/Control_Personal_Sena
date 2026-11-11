@@ -74,7 +74,6 @@ describe('recuperación al arrancar', () => {
 describe('reiniciar demo', () => {
   it('deja el sistema listo para otro ensayo', async () => {
     await entrarCompleto(s);
-    await s.hw({ tipo: 'p01', ocupado: false });
     await s.flujo.reiniciarDemo();
     expect(await activos()).toBe(0);
     expect((await pool.query("SELECT estado FROM espacios WHERE codigo='P01'")).rows[0].estado).toBe('LIBRE');

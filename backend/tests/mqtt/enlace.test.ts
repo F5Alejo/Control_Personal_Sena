@@ -22,15 +22,19 @@ beforeAll(async () => {
 afterAll(async () => { await esp.cerrar(); await backend.cerrar(); await broker.cerrar(); });
 
 describe('enlace MQTT', () => {
-  it('un mensaje publicado en senapark/sensores/p01 actualiza el estado', async () => {
-    await esp.publicar('senapark/sensores/p01', { ocupado: true, distancia_cm: 5 });
-    await espera(() => estado.snapshot().p01Ocupado === true);
+  it('un mensaje de senapark/sensores/entrada actualiza presencia y distancia', async () => {
+    await esp.publicar('senapark/sensores/entrada', { presente: true, distancia_cm: 9 });
+    await espera(() => estado.snapshot().distanciaCm === 9 && estado.snapshot().vehiculoEnEntrada);
+  });
+  it('la telemetría de senapark/telemetria llega al estado', async () => {
+    await esp.publicar('senapark/telemetria', { rssi: -63, uptime_s: 7 });
+    await espera(() => estado.snapshot().telemetria?.rssi === -63);
   });
   it('un JSON roto llama a alInvalido y no detiene mensajes siguientes', async () => {
     await esp.publicar('senapark/sensores/entrada', '{roto');
     await espera(() => invalidos.length === 1);
-    await esp.publicar('senapark/sensores/entrada', { presente: true });
-    await espera(() => estado.snapshot().vehiculoEnEntrada === true);
+    await esp.publicar('senapark/sensores/entrada', { presente: false, distancia_cm: 70 });
+    await espera(() => estado.snapshot().distanciaCm === 70);
   });
   it('publicar falla si el cliente está desconectado', async () => {
     const c = await conectarMqtt({ url: `mqtt://localhost:${PUERTO}`, clientId: 'test-x' });

@@ -7,8 +7,19 @@ describe('parsearMensaje', () => {
   it('parsea entrada presente', () => {
     expect(parsearMensaje('senapark/sensores/entrada', j({ presente: true }))).toEqual({ ok: true, mensaje: { tipo: 'entrada', presente: true } });
   });
-  it('parsea p01 ocupado con distancia', () => {
-    expect(parsearMensaje('senapark/sensores/p01', j({ ocupado: true, distancia_cm: 6 }))).toEqual({ ok: true, mensaje: { tipo: 'p01', ocupado: true, distanciaCm: 6 } });
+  it('parsea entrada con la distancia del HC-SR04', () => {
+    expect(parsearMensaje('senapark/sensores/entrada', j({ presente: true, distancia_cm: 12.5 }))).toEqual({ ok: true, mensaje: { tipo: 'entrada', presente: true, distanciaCm: 12.5 } });
+  });
+  it('parsea la telemetría del controlador', () => {
+    const r = parsearMensaje('senapark/telemetria', j({ rssi: -58, uptime_s: 120, ip: '192.168.1.40', heap: 210000, angulo: 90 }));
+    expect(r).toEqual({ ok: true, mensaje: { tipo: 'telemetria', rssi: -58, uptimeS: 120, ip: '192.168.1.40', heapLibre: 210000, angulo: 90 } });
+  });
+  it('la telemetría acepta solo parte de los campos', () => {
+    expect(parsearMensaje('senapark/telemetria', j({ rssi: -70, uptime_s: 5 }))).toEqual({ ok: true, mensaje: { tipo: 'telemetria', rssi: -70, uptimeS: 5 } });
+  });
+  it('ya no acepta el topic de p01 ni el de ambiente', () => {
+    expect(parsearMensaje('senapark/sensores/p01', j({ ocupado: true })).ok).toBe(false);
+    expect(parsearMensaje('senapark/ambiente', j({ temp: 20, hum: 50, movimiento: false })).ok).toBe(false);
   });
   it('parsea cruce', () => {
     expect(parsearMensaje('senapark/sensores/paso', j({ evento: 'cruce' }))).toEqual({ ok: true, mensaje: { tipo: 'cruce' } });
@@ -28,7 +39,7 @@ describe('parsearMensaje', () => {
     expect(r.ok).toBe(false);
   });
   it('rechaza campos faltantes', () => {
-    expect(parsearMensaje('senapark/sensores/p01', j({ distancia_cm: 5 })).ok).toBe(false);
+    expect(parsearMensaje('senapark/sensores/entrada', j({ distancia_cm: 5 })).ok).toBe(false);
   });
   it('rechaza estado de texto desconocido', () => {
     expect(parsearMensaje('senapark/estado', 'quizas').ok).toBe(false);

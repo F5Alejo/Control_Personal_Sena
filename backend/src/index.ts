@@ -44,7 +44,7 @@ const servidor = http.createServer();
 let flujo!: FlujoAcceso;
 const emisor = crearTiempoReal(servidor, () => estadoGeneral({ estado, flujo, config }));
 flujo = new FlujoAcceso({ pool, reloj: relojSistema, estado, publicador: cliente, emisor, temporizador: temporizadorSistema, tiempos: config.tiempos });
-await flujo.recuperarAlArrancar();
+await flujo.recuperarAlArrancar(); // también deja P01 en el estado en vivo según los accesos
 flujo.iniciar();
 // Sin conexión al broker no llega el Last Will del ESP32: se da por offline para no autorizar a ciegas.
 cliente.enDesconexion(() => { estado.aplicar({ tipo: 'online', valor: false }); void flujo.alPerderMqtt(); });
@@ -52,7 +52,7 @@ estado.on('cambio', () => { estadoGeneral({ estado, flujo, config }).then((e) =>
 
 // En modo simulado el ESP32 de mentira entra por el broker, como entraría el real.
 const simulador = config.modoSimulado
-  ? await crearEsp32Simulado({ url: urlMqtt, clientId: `senapark-esp32-simulado-${process.pid}`, usuario: config.mqtt.usuario, clave: config.mqtt.clave, ca: config.mqtt.ca })
+  ? await crearEsp32Simulado({ url: urlMqtt, clientId: `senapark-esp32-simulado-${process.pid}`, usuario: config.mqtt.usuario, clave: config.mqtt.clave, ca: config.mqtt.ca }, { telemetriaMs: 5000 })
   : undefined;
 await simulador?.conectar();
 

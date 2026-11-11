@@ -11,7 +11,7 @@ beforeEach(async () => { await limpiarTablas(pool); s = await montarFlujo(pool);
 const barrera = (s: any) => s.pub.de('senapark/cmd/barrera').map((m: any) => m.payload);
 
 describe('flujo de entrada', () => {
-  it('camino feliz: confirmar, vehículo, apertura, cruce y P01 ocupado dejan el acceso DENTRO', async () => {
+  it('camino feliz: confirmar, vehículo, apertura, cruce y 3 s después el acceso queda DENTRO', async () => {
     await s.autorizar();
     expect(await s.estadoAut()).toBe('ESPERANDO_VEHICULO');
     await s.hw({ tipo: 'entrada', presente: true });
@@ -24,8 +24,9 @@ describe('flujo de entrada', () => {
     await s.hw({ tipo: 'cruce' });
     expect(await s.estadoAut()).toBe('CRUZANDO');
     expect(barrera(s).map((m: any) => m.accion)).toEqual(['abrir', 'cerrar']);
-    await s.hw({ tipo: 'p01', ocupado: true });
+    await s.avanzar(3000);
     expect(await s.estadoAut()).toBe('FINALIZADA');
+    expect(s.estado.snapshot().p01Ocupado).toBe(true);
     expect((await s.acceso()).estado).toBe('DENTRO');
     expect((await pool.query("SELECT estado FROM espacios WHERE codigo='P01'")).rows[0].estado).toBe('OCUPADO');
     expect(await s.eventos('ENTRADA_REGISTRADA')).toHaveLength(1);
@@ -59,14 +60,14 @@ describe('flujo de entrada', () => {
     expect(await s.estadoAut()).toBe('TIEMPO_AGOTADO');
     expect(await s.eventos('VEHICULO_NO_CRUZO')).toHaveLength(1);
   });
-  it('P01 sin ocuparse a los 30 s anula el acceso y registra ENTRADA_SIN_OCUPACION', async () => {
+  it('al cruzar ya cuenta como entrada: queda CRUZANDO y P01 sigue libre hasta que pasan 3 s', async () => {
     await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true });
     await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: 'cmd-1' }); await s.hw({ tipo: 'cruce' });
-    await s.avanzar(30000);
-    expect((await s.acceso()).estado).toBe('ANULADO');
-    expect(await s.estadoAut()).toBe('TIEMPO_AGOTADO');
-    expect(await s.eventos('ENTRADA_SIN_OCUPACION')).toHaveLength(1);
+    expect(await s.estadoAut()).toBe('CRUZANDO');
     expect((await pool.query("SELECT estado FROM espacios WHERE codigo='P01'")).rows[0].estado).toBe('LIBRE');
+    expect(s.estado.snapshot().p01Ocupado).toBeNull();
+    await s.avanzar(2999);
+    expect(await s.estadoAut()).toBe('CRUZANDO');
   });
   it('si publicar falla la autorización queda ERROR_MQTT y no hay acceso activo', async () => {
     await s.autorizar(); s.pub.fallar = true;
@@ -87,20 +88,11 @@ describe('flujo de entrada', () => {
   });
   it('los eventos de Emisor llegan en el orden de las transiciones', async () => {
     await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true });
-    await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: 'cmd-1' }); await s.hw({ tipo: 'cruce' }); await s.hw({ tipo: 'p01', ocupado: true });
+    await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: 'cmd-1' }); await s.hw({ tipo: 'cruce' }); await s.avanzar(3000);
     expect(s.emisor.de('autorizacion:cambio').map((x: any) => x.estado)).toEqual(['ESPERANDO_VEHICULO', 'AUTORIZADA', 'BARRERA_ABIERTA', 'CRUZANDO', 'FINALIZADA']);
   });
   it('publica el texto de la LCD en cada transición', async () => {
     await s.autorizar();
     expect(s.pub.de('senapark/cmd/lcd').at(-1)!.payload).toEqual({ linea1: 'Fabio Zorro', linea2: 'Acerque el carro' });
-  });
-  it('P01 que se ocupa antes del cruce igual registra la entrada', async () => {
-    await s.autorizar(); await s.hw({ tipo: 'entrada', presente: true });
-    await s.hw({ tipo: 'barrera', estado: 'abierta', cmdId: 'cmd-1' });
-    await s.hw({ tipo: 'p01', ocupado: true });
-    await s.hw({ tipo: 'cruce' });
-    expect(await s.estadoAut()).toBe('FINALIZADA');
-    expect((await s.acceso()).estado).toBe('DENTRO');
-    expect(await s.eventos('P01_OCUPADO_SIN_ACCESO')).toHaveLength(0);
   });
 });

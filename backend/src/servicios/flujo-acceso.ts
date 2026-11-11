@@ -7,7 +7,6 @@ import type { EstadoHardware } from '../hardware/estado.js';
 import { ESTADOS_AUTORIZACION_VIVA } from '../dominio/tipos.js';
 import { ErrorHttp } from '../errores.js';
 import { registrarEvento } from '../eventos/eventos.repo.js';
-import { accesoActivoEnP01 } from '../modulos/accesos/accesos.repo.js';
 import { TOPICS } from '../mqtt/topics.js';
 import { mensajeLcd } from './texto-lcd.js';
 
@@ -36,7 +35,6 @@ export class FlujoAcceso {
     estado.on('entrada', (presente: boolean) => { if (presente) this.encolar(() => this.alVehiculoPresente()); });
     estado.on('barrera', (b: { estado: string; cmdId?: string }) => this.encolar(() => this.alBarrera(b)));
     estado.on('cruce', () => this.encolar(() => this.alCruce()));
-    estado.on('p01', (ocupado: boolean) => this.encolar(() => this.alP01(ocupado)));
     estado.on('online', (valor: boolean) => this.encolar(() => this.alCambiarOnline(valor)));
     estado.on('manual', (m: { solicitud: string }) => this.encolar(() => this.evento('SOLICITUD_MANUAL', m)));
   }
@@ -89,11 +87,6 @@ export class FlujoAcceso {
     this.d.temporizador.programar(this.d.tiempos.esperaCruceMs, () => {
       if (!this.actual) void this.publicar(TOPICS.cmdBarrera, this.comandoBarrera('cerrar'));
     });
-  }
-
-  /** P01 figura ocupado por el sensor pero ningún acceso lo respalda. */
-  async bloqueoP01(): Promise<boolean> {
-    return this.d.estado.snapshot().p01Ocupado === true && !(await accesoActivoEnP01(this.d.pool));
   }
 
   /** Resuelve cuando se procesaron todos los eventos en cola (útil en pruebas). */
@@ -219,42 +212,23 @@ export class FlujoAcceso {
     if (!c || c.estado !== 'BARRERA_ABIERTA') return;
     await this.transicion(c, 'CRUZANDO');
     await this.publicar(TOPICS.cmdBarrera, this.comandoBarrera('cerrar'));
-    this.programar(c, this.d.tiempos.esperaP01Ms, () => this.alVencerP01(c));
-    // El sensor de P01 pudo cambiar antes del cruce: se evalúa el nivel, no solo el flanco.
-    const p01 = this.d.estado.snapshot().p01Ocupado;
-    if (p01 !== null) await this.alP01(p01);
+    // Sin sensor en P01: el cruce confirmado por el HC-SR04 cuenta, y pasado un momento el vehículo se da por estacionado o ido.
+    this.programar(c, this.d.tiempos.estacionarMs, () => this.alEstacionar(c));
   }
 
-  private async alP01(ocupado: boolean): Promise<void> {
-    const c = this.actual;
-    if (c && c.estado === 'CRUZANDO' && c.direccion === 'ENTRADA' && ocupado) {
-      await this.d.pool.query("UPDATE espacios SET estado = 'OCUPADO', fecha_modificacion = now() WHERE codigo = 'P01'");
+  private async alEstacionar(c: Contexto): Promise<void> {
+    if (this.actual !== c || c.estado !== 'CRUZANDO') return;
+    if (c.direccion === 'ENTRADA') {
       await this.cambiarAcceso(c, 'DENTRO');
       await this.evento('ENTRADA_REGISTRADA', { accesoId: c.accesoId, aprendiz: c.aprendiz, placa: c.placa });
-      await this.cerrarFlujo(c, 'FINALIZADA');
-      return;
-    }
-    if (c && c.estado === 'CRUZANDO' && c.direccion === 'SALIDA' && !ocupado) {
+    } else {
       const r = await this.d.pool.query('SELECT entrada_en FROM accesos WHERE id = $1', [c.accesoId]);
-      const ahora = this.d.reloj.ahora();
-      const permanenciaSeg = Math.round((ahora.getTime() - new Date(r.rows[0].entrada_en).getTime()) / 1000);
+      const permanenciaSeg = Math.round((this.d.reloj.ahora().getTime() - new Date(r.rows[0].entrada_en).getTime()) / 1000);
       await this.cambiarAcceso(c, 'FINALIZADO', true);
-      await this.d.pool.query("UPDATE espacios SET estado = 'LIBRE', fecha_modificacion = now() WHERE codigo = 'P01'");
       await this.evento('SALIDA_REGISTRADA', { accesoId: c.accesoId, aprendiz: c.aprendiz, placa: c.placa, permanencia_seg: permanenciaSeg });
-      await this.cerrarFlujo(c, 'FINALIZADA');
-      return;
     }
-    await this.registrarInconsistencia(ocupado);
-  }
-
-  private async registrarInconsistencia(ocupado: boolean): Promise<void> {
-    if (ocupado) {
-      if (!(await accesoActivoEnP01(this.d.pool))) await this.evento('P01_OCUPADO_SIN_ACCESO', {});
-      return;
-    }
-    if (this.actual?.direccion === 'SALIDA') return; // salida en curso: se resuelve al cruzar
-    const r = await this.d.pool.query("SELECT id, estado FROM accesos WHERE estado IN ('DENTRO','SALIENDO') LIMIT 1");
-    if (r.rows[0]) await this.evento('P01_LIBERADO_SIN_SALIDA', { accesoId: r.rows[0].id });
+    await this.sincronizarEspacio();
+    await this.cerrarFlujo(c, 'FINALIZADA');
   }
 
   private async alCambiarOnline(valor: boolean): Promise<void> {
@@ -277,10 +251,13 @@ export class FlujoAcceso {
     this.actual = null;
   }
 
-  private async sincronizarEspacio(): Promise<void> {
+  /** Deja `espacios` según los accesos y lo copia al estado en vivo (P01 no tiene sensor). */
+  async sincronizarEspacio(): Promise<void> {
     await this.d.pool.query(
       `UPDATE espacios SET fecha_modificacion = now(), estado = CASE WHEN EXISTS
          (SELECT 1 FROM accesos a WHERE a.espacio_id = espacios.id AND a.estado IN ('DENTRO','SALIENDO')) THEN 'OCUPADO' ELSE 'LIBRE' END`);
+    const r = await this.d.pool.query("SELECT estado FROM espacios WHERE codigo = 'P01'");
+    this.d.estado.fijarP01(r.rows[0]?.estado === 'OCUPADO');
   }
 
   private async alVencerEspera(ctx: Contexto): Promise<void> {
@@ -295,18 +272,5 @@ export class FlujoAcceso {
     await this.revertirAcceso(ctx);
     await this.evento('VEHICULO_NO_CRUZO', { autorizacionId: ctx.id, aprendiz: ctx.aprendiz, placa: ctx.placa });
     await this.cerrarFlujo(ctx, 'TIEMPO_AGOTADO', 'El vehículo no cruzó');
-  }
-
-  private async alVencerP01(ctx: Contexto): Promise<void> {
-    if (this.actual !== ctx || ctx.estado !== 'CRUZANDO') return;
-    const datos = { autorizacionId: ctx.id, aprendiz: ctx.aprendiz, placa: ctx.placa };
-    if (ctx.direccion === 'ENTRADA') {
-      await this.cambiarAcceso(ctx, 'ANULADO');
-      await this.evento('ENTRADA_SIN_OCUPACION', datos);
-      await this.cerrarFlujo(ctx, 'TIEMPO_AGOTADO', 'P01 no se ocupó');
-    } else {
-      await this.evento('SALIDA_SIN_LIBERAR', datos);
-      await this.cerrarFlujo(ctx, 'TIEMPO_AGOTADO', 'P01 sigue ocupado');
-    }
   }
 }

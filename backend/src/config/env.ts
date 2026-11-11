@@ -3,7 +3,7 @@ import { z } from 'zod';
 export interface Tiempos {
   esperaVehiculoMs: number;
   esperaCruceMs: number;
-  esperaP01Ms: number;
+  estacionarMs: number;
   comandoVigenciaMs: number;
 }
 
@@ -32,7 +32,7 @@ const esquema = z.object({
   MODO_SIMULADO: z.preprocess(vacio, z.enum(['true', 'false']).default('false')),
   ESPERA_VEHICULO_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(30000)),
   ESPERA_CRUCE_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(15000)),
-  ESPERA_P01_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(30000)),
+  ESTACIONAR_MS: z.preprocess(vacio, z.coerce.number().int().positive().default(3000)),
 });
 
 export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -46,7 +46,7 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
     tiempos: {
       esperaVehiculoMs: e.ESPERA_VEHICULO_MS,
       esperaCruceMs: e.ESPERA_CRUCE_MS,
-      esperaP01Ms: e.ESPERA_P01_MS,
+      estacionarMs: e.ESTACIONAR_MS,
       comandoVigenciaMs: 5000,
     },
     modoSimulado: e.MODO_SIMULADO === 'true',

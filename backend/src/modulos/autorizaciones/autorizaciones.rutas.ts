@@ -12,7 +12,6 @@ const MENSAJES: Record<MotivoDenegacion, string> = {
   YA_ESTA_DENTRO: 'El vehículo ya está dentro del parqueadero',
   NO_ESTA_DENTRO: 'El vehículo no está dentro del parqueadero',
   ESPACIO_OCUPADO: 'El espacio P01 está ocupado',
-  P01_BLOQUEADO_INCONSISTENCIA: 'P01 figura ocupado sin un acceso registrado: revise el espacio',
   AUTORIZACION_ACTIVA: 'Ya hay una autorización en curso',
   DISPOSITIVO_OFFLINE: 'El dispositivo de la barrera está sin conexión',
 };

@@ -54,7 +54,7 @@ async function entrar(a: { id: number }, v: { id: number }) {
   await esperaAut('BARRERA_ABIERTA');
   await esp.poner('cruce');
   await esperaAut('CRUZANDO');
-  await esp.poner('p01', true);
+  await flujo.esperar(); temp.avanzar(config.tiempos.estacionarMs); await flujo.esperar();
   await esperaAut('FINALIZADA');
   await esp.poner('entrada', false);
   await espera(async () => (await ultimoAcceso(a.id))?.estado === 'DENTRO');
@@ -68,7 +68,7 @@ async function salir(a: { id: number }, v: { id: number }) {
   await esperaAut('BARRERA_ABIERTA');
   await esp.poner('cruce');
   await esperaAut('CRUZANDO');
-  await esp.poner('p01', false);
+  await flujo.esperar(); temp.avanzar(config.tiempos.estacionarMs); await flujo.esperar();
   await esperaAut('FINALIZADA');
   await esp.poner('entrada', false);
   await espera(async () => (await ultimoAcceso(a.id))?.estado === 'FINALIZADO');
@@ -86,14 +86,14 @@ afterAll(async () => { await esp.cerrar(); await backend.cerrar(); await broker.
 
 beforeEach(async () => {
   await limpiarTablas(pool);
-  for (const e of ['online', 'entrada', 'cruce', 'p01', 'barrera', 'manual']) estado.removeAllListeners(e); // flujos de pruebas anteriores
+  for (const e of ['online', 'entrada', 'cruce', 'barrera', 'manual']) estado.removeAllListeners(e); // flujos de pruebas anteriores
   reloj = new RelojFalso(); temp = new TemporizadorManual();
   flujo = new FlujoAcceso({ pool, reloj, estado, publicador: backend, emisor: new EmisorFalso(), temporizador: temp, tiempos: config.tiempos });
   flujo.iniciar();
   app = crearApp({ pool, reloj, config, emisor: new EmisorFalso(), publicador: backend, temporizador: temp, estado, flujo });
   await esp.conectar();
-  await esp.poner('entrada', false); await esp.poner('p01', false);
-  await espera(() => estado.snapshot().esp32Online && !estado.snapshot().vehiculoEnEntrada && estado.snapshot().p01Ocupado === false);
+  await esp.poner('entrada', false);
+  await espera(() => estado.snapshot().esp32Online && !estado.snapshot().vehiculoEnEntrada);
 });
 
 describe('prueba integral (broker real, BD real, ESP32 simulado)', () => {

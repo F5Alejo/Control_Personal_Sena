@@ -13,7 +13,7 @@ export async function enlazarHardware(
     if (!r.ok) { alInvalido(topic, r.motivo); return; }
     estado.aplicar(r.mensaje);
   };
-  for (const patron of [TOPICS.estado, 'senapark/sensores/#', TOPICS.ambiente, TOPICS.barreraEstado, TOPICS.manual]) {
+  for (const patron of [TOPICS.estado, 'senapark/sensores/#', TOPICS.telemetria, TOPICS.barreraEstado, TOPICS.manual]) {
     await cliente.suscribir(patron, manejar);
   }
 }

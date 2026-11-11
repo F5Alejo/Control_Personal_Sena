@@ -62,12 +62,7 @@ describe('crearAutorizacion: entrada', () => {
     const b = await crearAprendiz(pool, { cedula: '2', nombre: 'Otro' });
     const v2 = await crearVehiculo(pool, b.id, { placa: 'ZZZ999', tipo: 'CARRO' });
     await ponerDentro(b.id, v2.id);
-    estado.aplicar({ tipo: 'p01', ocupado: true });
     expect(await crear()).toEqual({ ok: false, motivo: 'ESPACIO_OCUPADO' });
-  });
-  it('rechaza entrada con P01 ocupado según el sensor y sin acceso registrado', async () => {
-    estado.aplicar({ tipo: 'p01', ocupado: true });
-    expect(await crear()).toEqual({ ok: false, motivo: 'P01_BLOQUEADO_INCONSISTENCIA' });
   });
   it('rechaza si el ESP32 está offline', async () => {
     estado.aplicar({ tipo: 'online', valor: false });
@@ -86,16 +81,12 @@ describe('crearAutorizacion: salida', () => {
   it('rechaza salida sin acceso DENTRO', async () => {
     expect(await crear('SALIDA')).toEqual({ ok: false, motivo: 'NO_ESTA_DENTRO' });
   });
-  it('autoriza salida con acceso DENTRO y P01 ocupado', async () => {
-    await ponerDentro(a.id, v.id); estado.aplicar({ tipo: 'p01', ocupado: true });
+  it('autoriza salida con acceso DENTRO', async () => {
+    await ponerDentro(a.id, v.id);
     expect((await crear('SALIDA')).ok).toBe(true);
   });
-  it('rechaza salida si P01 figura libre', async () => {
-    await ponerDentro(a.id, v.id); estado.aplicar({ tipo: 'p01', ocupado: false });
-    expect(await crear('SALIDA')).toEqual({ ok: false, motivo: 'NO_ESTA_DENTRO' });
-  });
   it('permite reintentar la salida de un acceso SALIENDO', async () => {
-    await ponerDentro(a.id, v.id, 'SALIENDO'); estado.aplicar({ tipo: 'p01', ocupado: true });
+    await ponerDentro(a.id, v.id, 'SALIENDO');
     expect((await crear('SALIDA')).ok).toBe(true);
   });
 });

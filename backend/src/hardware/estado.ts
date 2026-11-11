@@ -1,26 +1,39 @@
 import { EventEmitter } from 'node:events';
 import type { MensajeHardware } from '../mqtt/mensajes.js';
 
+export interface Telemetria { rssi: number; uptimeS: number; ip: string | null; heapLibre: number | null; angulo: number | null }
+
 export interface SnapshotHardware {
   esp32Online: boolean;
+  /** HC-SR04 de la barrera: hay un vehículo a distancia de escaneo. */
   vehiculoEnEntrada: boolean;
+  /** Última distancia medida por el HC-SR04 de la barrera, en cm. */
+  distanciaCm: number | null;
+  /** P01 no tiene sensor: lo fija el backend según los accesos registrados. */
   p01Ocupado: boolean | null;
   barrera: 'abierta' | 'cerrada' | 'desconocida';
-  ambiente: { temp: number; hum: number; movimiento: boolean } | null;
+  telemetria: Telemetria | null;
   actualizado: string;
 }
 
 export class EstadoHardware extends EventEmitter {
   private s: SnapshotHardware = {
-    esp32Online: false, vehiculoEnEntrada: false, p01Ocupado: null, barrera: 'desconocida', ambiente: null,
+    esp32Online: false, vehiculoEnEntrada: false, distanciaCm: null, p01Ocupado: null, barrera: 'desconocida', telemetria: null,
     actualizado: new Date().toISOString(),
   };
 
-  snapshot(): SnapshotHardware { return { ...this.s, ambiente: this.s.ambiente && { ...this.s.ambiente } }; }
+  snapshot(): SnapshotHardware { return { ...this.s, telemetria: this.s.telemetria && { ...this.s.telemetria } }; }
 
   private cambio(): void {
     this.s.actualizado = new Date().toISOString();
     this.emit('cambio', this.snapshot());
+  }
+
+  /** Lo llama el flujo cuando el acceso registrado cambia la ocupación de P01. */
+  fijarP01(ocupado: boolean): void {
+    if (this.s.p01Ocupado === ocupado) return;
+    this.s.p01Ocupado = ocupado;
+    this.cambio();
   }
 
   aplicar(m: MensajeHardware): void {
@@ -28,20 +41,25 @@ export class EstadoHardware extends EventEmitter {
       case 'online':
         if (this.s.esp32Online === m.valor) return;
         this.s.esp32Online = m.valor;
-        if (!m.valor) this.s.barrera = 'desconocida';
+        if (!m.valor) {
+          this.s.barrera = 'desconocida'; this.s.telemetria = null; this.s.distanciaCm = null;
+          const habia = this.s.vehiculoEnEntrada; this.s.vehiculoEnEntrada = false;
+          if (habia) this.emit('entrada', false);
+        }
         this.cambio(); this.emit('online', m.valor); return;
-      case 'entrada':
-        if (this.s.vehiculoEnEntrada === m.presente) return;
-        this.s.vehiculoEnEntrada = m.presente;
-        this.cambio(); this.emit('entrada', m.presente); return;
+      case 'entrada': {
+        const distancia = m.distanciaCm ?? this.s.distanciaCm;
+        const cambioPresencia = this.s.vehiculoEnEntrada !== m.presente;
+        if (!cambioPresencia && distancia === this.s.distanciaCm) return;
+        this.s.distanciaCm = distancia; this.s.vehiculoEnEntrada = m.presente;
+        this.cambio();
+        if (cambioPresencia) this.emit('entrada', m.presente);
+        return;
+      }
       case 'cruce':
         this.emit('cruce'); return;
-      case 'p01':
-        if (this.s.p01Ocupado === m.ocupado) return;
-        this.s.p01Ocupado = m.ocupado;
-        this.cambio(); this.emit('p01', m.ocupado); return;
-      case 'ambiente':
-        this.s.ambiente = { temp: m.temp, hum: m.hum, movimiento: m.movimiento };
+      case 'telemetria':
+        this.s.telemetria = { rssi: m.rssi, uptimeS: m.uptimeS, ip: m.ip ?? null, heapLibre: m.heapLibre ?? null, angulo: m.angulo ?? null };
         this.cambio(); return;
       case 'barrera':
         this.s.barrera = m.estado;

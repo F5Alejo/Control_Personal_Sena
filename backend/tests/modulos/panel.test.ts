@@ -23,13 +23,15 @@ async function sembrarAccesos(n: number) {
 }
 
 describe('panel', () => {
-  it('GET /api/estado incluye hardware, autorización activa y bloqueoP01', async () => {
+  it('GET /api/estado incluye hardware con distancia y telemetría, y la autorización activa', async () => {
     const { d, app } = montar();
-    d.estado.aplicar({ tipo: 'p01', ocupado: true });
+    d.estado.aplicar({ tipo: 'entrada', presente: true, distanciaCm: 14 });
+    d.estado.aplicar({ tipo: 'telemetria', rssi: -61, uptimeS: 42 });
     const r = await request(app).get('/api/estado');
     expect(r.status).toBe(200);
-    expect(r.body.hardware.esp32Online).toBe(true);
-    expect(r.body).toMatchObject({ autorizacionActiva: null, bloqueoP01: true, modoSimulado: false, urlPublica: 'http://192.168.1.10:3000' });
+    expect(r.body.hardware).toMatchObject({ esp32Online: true, distanciaCm: 14, vehiculoEnEntrada: true, telemetria: { rssi: -61, uptimeS: 42 } });
+    expect(r.body).toMatchObject({ autorizacionActiva: null, modoSimulado: false, urlPublica: 'http://192.168.1.10:3000' });
+    expect(r.body.bloqueoP01).toBeUndefined();
   });
   it('GET /api/accesos respeta el límite y ordena del más reciente', async () => {
     await sembrarAccesos(3);

@@ -8,7 +8,7 @@ import { accesoActivoDeVehiculo, accesoActivoEnP01 } from '../accesos/accesos.re
 
 export type MotivoDenegacion =
   | 'APRENDIZ_INACTIVO' | 'VEHICULO_INACTIVO' | 'VEHICULO_NO_PERTENECE' | 'YA_ESTA_DENTRO' | 'NO_ESTA_DENTRO'
-  | 'ESPACIO_OCUPADO' | 'P01_BLOQUEADO_INCONSISTENCIA' | 'AUTORIZACION_ACTIVA' | 'DISPOSITIVO_OFFLINE';
+  | 'ESPACIO_OCUPADO' | 'AUTORIZACION_ACTIVA' | 'DISPOSITIVO_OFFLINE';
 
 export interface DepsAutorizacion { pool: pg.Pool; reloj: Reloj; estado: EstadoHardware; vigenciaQrSeg: number }
 export interface AutorizacionConDatos {
@@ -47,11 +47,9 @@ async function validar(c: pg.PoolClient, d: DepsAutorizacion, i: { aprendizId: n
   if (i.direccion === 'ENTRADA') {
     if (propio) return 'YA_ESTA_DENTRO';
     if (await accesoActivoEnP01(c)) return 'ESPACIO_OCUPADO';
-    if (hw.p01Ocupado === true) return 'P01_BLOQUEADO_INCONSISTENCIA';
     return null;
   }
   if (!propio || (propio.estado !== 'DENTRO' && propio.estado !== 'SALIENDO')) return 'NO_ESTA_DENTRO';
-  if (hw.p01Ocupado === false) return 'NO_ESTA_DENTRO';
   return null;
 }
 
