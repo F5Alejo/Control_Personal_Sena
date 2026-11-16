@@ -4,7 +4,9 @@ Maqueta de parqueadero inteligente: un puesto (P01), una barrera compartida de e
 
 - **Backend:** Node + TypeScript, Express 5, PostgreSQL, MQTT (`mqtt.js`; broker `aedes` local en modo simulado), Socket.IO.
 - **Frontend:** Angular (kiosco del celador en `/kiosco`, vista del aprendiz en `/acceso/:token`).
-- **Hardware:** ESP32 (PlatformIO, carpeta `pruebas/` y `platformio.ini`). Sin hardware se usa el ESP32 simulado.
+- **Hardware:** ESP32 con PlatformIO (`platformio.ini`, firmware en `src/main.cpp`, claves en `include/secrets.h`). Pruebas sueltas por componente en `ejemplos/`. Sin hardware se usa el ESP32 simulado.
+
+> **¿Retoma el proyecto en otro computador?** Empiece por [`docs/ESTADO.md`](docs/ESTADO.md): qué está hecho, qué falta y cómo dejar el equipo listo.
 
 ## Requisitos
 
@@ -45,6 +47,23 @@ cd backend && MODO_SIMULADO=true npm run dev     # API + broker + ESP32 simulado
 cd frontend && npm start                          # Angular en :4200 con proxy a :3000
 ```
 
+## Arranque rápido con scripts
+
+Después del primer arranque, todo se prende con un comando desde la raíz del proyecto:
+
+```bash
+./scripts/prender-todo.sh                              # PostgreSQL + build del frontend + backend simulado en :3000
+./scripts/prender-todo.sh --celular                    # además abre 3000/tcp y fija la IP del QR
+./scripts/prender-todo.sh --sin-build                  # no recompila el frontend
+MQTT_CLAVE=miclave ./scripts/prender-todo.sh --esp32   # ESP32 real: broker abierto a la LAN (abre 3000 y 1883/tcp)
+```
+
+`Ctrl+C` apaga el backend y cierra los puertos que abrió el script.
+
+Para manejar cada pieza por separado: `./scripts/servicio.sh <accion>` (sin acción muestra la lista). Las más usadas: `estado`, `dev-backend`, `dev-frontend`, `pruebas` y `firewall-cerrar`.
+
+Todos los comandos de la presentación, paso a paso: [`docs/comandos-presentacion.txt`](docs/comandos-presentacion.txt).
+
 ## Variables de entorno (`backend/.env`)
 
 | Variable | Qué hace |
@@ -53,6 +72,7 @@ cd frontend && npm start                          # Angular en :4200 con proxy a
 | `DATABASE_URL` | Conexión a PostgreSQL (`postgres:///senapark`). |
 | `MODO_SIMULADO` | `true` levanta un broker local y un ESP32 de mentira con panel de simulación en el kiosco. |
 | `MQTT_URL`, `MQTT_USUARIO`, `MQTT_CLAVE`, `MQTT_CA` | Broker real (por ejemplo EMQX en la nube). Vacío en modo simulado. |
+| `BROKER_LAN` | `true` abre el broker local a la red para el ESP32 real. Exige `MQTT_USUARIO` y `MQTT_CLAVE`, los mismos de `include/secrets.h`. |
 | `PUBLIC_URL` | URL que se codifica en el QR. Si está vacía, se usa la IP local del computador. |
 
 ## Que el celular vea el QR
@@ -77,7 +97,13 @@ Las pruebas usan la base `senapark_test`.
 
 ## ESP32 real
 
-El ESP32 debe hablar el contrato MQTT del backend (topics `senapark/...`: sensores, barrera, LCD; ver `docs/superpowers/specs/2026-11-10-sena-smart-park-design.md`). Para pasar de simulado a real: quite `MODO_SIMULADO`, defina `MQTT_URL` y flashee el firmware con PlatformIO.
+El ESP32 habla el contrato MQTT del backend (topics `senapark/...`: sensores, barrera, LCD; ver `docs/superpowers/specs/2026-11-10-sena-smart-park-design.md`).
+
+1. Conecte el hardware siguiendo [`docs/hardware/MONTAJE.md`](docs/hardware/MONTAJE.md): el ESP32 va fuera de las dos mini protoboards de 170 puntos y cada cable está numerado en la imagen `montaje-esp32-fuera.png`. El diagrama de pines sin protoboard es `conexiones.png`. Si cambia un pin en `src/main.cpp`, actualice la guía y corra `python3 docs/hardware/generar_montaje_fuera.py`.
+2. Copie `include/secrets.h.example` como `include/secrets.h` y complete el WiFi, la IP del computador (`MQTT_HOST`) y la clave del broker.
+3. Suba el firmware: `~/.platformio/penv/bin/pio run -e esp32dev -t upload`. En Windows el puerto es `COMx`, no `/dev/ttyUSB*`: use `pio run -e esp32dev -t upload --upload-port COM3` (vea el número en el Administrador de dispositivos).
+4. Prenda el backend con el broker abierto a la LAN: `MQTT_CLAVE=miclave ./scripts/prender-todo.sh --esp32`.
+5. Monitor serial (opcional): `~/.platformio/penv/bin/pio device monitor`.
 
 ## Demo
 

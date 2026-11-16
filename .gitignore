@@ -12,3 +12,4 @@ frontend/.angular
 .superpowers
 
 include/secrets.h
+.vscode/last.sql
